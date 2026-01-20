@@ -1,0 +1,3 @@
+{"depth": 0, "query": "Explain how the golden ratio relates to E8 symmetry and recursive reasoning.", "selected_ids": [1, 0, 5], "logdet_selected": -1.1185, "collision_full": false, "collision_selected": false, "confidence": 0.8635, "info_flow": 8.0, "stop_reason": "none"}
+{"depth": 1, "query": "Subquestion 1 from depth 1", "selected_ids": [2, 0, 1], "logdet_selected": -1.1242, "collision_full": false, "collision_selected": false, "confidence": 0.413, "info_flow": 1.0, "stop_reason": "none"}
+{"depth": 2, "query": "Subquestion 1 from depth 5", "selected_ids": [2, 0, 1], "logdet_selected": -1.1242, "collision_full": false, "collision_selected": false, "confidence": 0.357, "info_flow": 1.0, "stop_reason": "none"}
