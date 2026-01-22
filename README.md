@@ -30,14 +30,109 @@ pip install numpy scipy openai python-dotenv
 ### Step 3: Run the System
 
 ```bash
-# Run with default query
-python run_rlm.py
+# Interactive chat mode (RECOMMENDED)
+python chat.py
 
-# Run with custom query
+# Single query mode
 python run_rlm.py "What is the significance of phi in mathematics?"
 ```
 
-That's it! The system will analyze your query using recursive reasoning.
+That's it! The interactive chat lets you ask unlimited questions.
+
+---
+
+## 💬 Interactive Chat Mode (NEW!)
+
+The easiest way to use the system is the interactive chat interface:
+
+```bash
+python chat.py
+```
+
+Once started, you have a persistent session where you can ask unlimited questions:
+
+```
+  PHI-ENHANCED RLM INTERACTIVE CHAT
+
+Initializing PHI-Enhanced RLM...
+✓ Backend ready: z-ai/glm-4.7
+✓ RLM ready (8 chunks, depth=3)
+
+Ready! Type your questions or /help for commands.
+
+You: What is E8?
+Thinking...
+
+PHI-RLM: E8 is the largest exceptional Lie group...
+
+[Confidence: 85.00%]
+
+You: /repo tensorflow/tensorflow
+Analyzing tensorflow/tensorflow...
+  Cloning https://github.com/tensorflow/tensorflow...
+  ✓ Extracted 45 files
+
+[Files: 45, Confidence: 82.00%]
+
+You: /url https://en.wikipedia.org/wiki/Golden_ratio
+Fetching https://en.wikipedia.org/wiki/Golden_ratio...
+✓ Extracted 30000 chars of text
+✓ RLM ready (12 chunks, depth=3)
+Analyzing content (this may take 30-60 seconds)...
+
+SUMMARY
+The golden ratio (φ) is an irrational number approximately equal to 1.618...
+
+[Confidence: 80.00%]
+
+You: /quit
+Goodbye!
+```
+
+### Chat Commands
+
+| Command | Description |
+|---------|-------------|
+| `<question>` | Ask any question directly |
+| `/repo owner/repo` | Analyze a GitHub repository |
+| `/url https://...` | Fetch and analyze any URL |
+| `/local ./path` | Analyze local directory |
+| `/file query.txt` | Load query from file |
+| `/depth N` | Set recursion depth (default: 3) |
+| `/context file.json` | Load custom context chunks |
+| `/reset` | Reset to default context |
+| `/model` | Show current model |
+| `/help` | Show all commands |
+| `/quit` | Exit chat |
+
+---
+
+## 🔍 Repository Analyzer (NEW!)
+
+Analyze any GitHub repository, URL, or local directory:
+
+```bash
+# Analyze GitHub repos
+python repo_analyzer.py owner/repo "What does this project do?"
+python repo_analyzer.py https://github.com/owner/repo "Assess the architecture"
+
+# Analyze URLs
+python repo_analyzer.py https://example.com/page "Summarize this content"
+
+# Analyze local code
+python repo_analyzer.py ./my/project "Find security issues"
+
+# Save output to file
+python repo_analyzer.py owner/repo -o report.json
+```
+
+**Features:**
+- Shallow clones GitHub repos (fast)
+- Extracts relevant code files (.py, .js, .ts, etc.)
+- Skips node_modules, .git, __pycache__
+- Prioritizes README, package.json, requirements.txt
+- Uses φ-Gram chunk selection for diversity
+- Returns confidence scores
 
 ---
 
@@ -53,8 +148,15 @@ python run_rlm.py
 
 # Custom queries
 python run_rlm.py "Explain quantum error correction"
-python run_rlm.py "How do neural networks learn hierarchical features?"
-python run_rlm.py "What is the relationship between prime numbers and the Riemann hypothesis?"
+
+# NEW: Load query from file (for long/complex queries)
+python run_rlm.py --file my_query.txt
+
+# NEW: Set recursion depth (default: 4)
+python run_rlm.py --depth 2 "Quick analysis"
+
+# NEW: Read from stdin
+echo "What is phi?" | python run_rlm.py --stdin
 ```
 
 **Example Output:**
@@ -311,12 +413,17 @@ phi-enhanced-rlm/
 ├── .env.template                        # API key template
 ├── .env                                 # Your API config (not in repo)
 │
-├── run_rlm.py                          # Easy command-line runner
+├── chat.py                             # Interactive chat interface (NEW!)
+├── repo_analyzer.py                    # GitHub/URL/local analyzer (NEW!)
+├── run_rlm.py                          # Command-line runner with file input
 ├── openrouter_backend.py               # Open Router API backend
 ├── phi_enhanced_rlm.py                 # Core RLM orchestrator
 ├── phi_separation_novel_mathematics.py # Mathematics library
+├── validate_rlm.py                     # System validation script
 │
-└── rlm_trace.jsonl                     # Execution trace (generated)
+├── rlm_trace.jsonl                     # Execution trace (generated)
+├── chat_trace.jsonl                    # Chat trace (generated)
+└── analyzer_trace.jsonl                # Analyzer trace (generated)
 ```
 
 ---
