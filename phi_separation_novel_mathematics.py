@@ -4,7 +4,7 @@ NOVEL MATHEMATICS FROM THE φ-SEPARATION FRAMEWORK
 ==================================================
 Python Implementation of E8/H4/φ Geometric-Analytic Synthesis Extensions
 
-Author: Derived from Timothy McGirl's Foundational Work
+Based on E8 Lie group theory, golden ratio properties, and information theory.
 Date: January 2026
 
 This module implements the ten novel mathematical frameworks:

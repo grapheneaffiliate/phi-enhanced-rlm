@@ -653,9 +653,9 @@ Passed: 6/6
 
 ## 📚 References
 
-Based on the foundational work:
-- **"The Geometric-Analytic Synthesis: 𝜑-Separation in E8/H4-Fibrations over Spectral Theory"** by Timothy McGirl (2024)
-- arXiv preprint: `2512.24601v1`
+Based on foundational research:
+- **"Recursive Language Models"** - arXiv preprint: `2512.24601v1` (Dec 2025)
+- Mathematical concepts derived from E8 Lie group theory, golden ratio properties, and information theory
 
 ## 🤝 Contributing
 
