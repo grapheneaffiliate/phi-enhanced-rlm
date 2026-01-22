@@ -254,9 +254,36 @@ class InteractiveChat:
             
             print(f"{COLOR_INFO}✓ Extracted {len(content)} chars of text{COLOR_RESET}")
             
-            # Use content as context (limit to 15000 chars to speed up)
-            content = content[:15000]
-            self.context_chunks = [f"Content from {url}:\n\n{content}"]
+            # Split content into multiple chunks for better φ-Gram selection
+            content = content[:20000]  # Limit total size
+            
+            # Split by paragraphs (double newlines or periods followed by space)
+            import re
+            paragraphs = re.split(r'\.\s+|\n\n+', content)
+            
+            # Group into chunks of ~500-1000 chars each
+            chunks = []
+            current_chunk = ""
+            for para in paragraphs:
+                para = para.strip()
+                if not para or len(para) < 20:
+                    continue
+                if len(current_chunk) + len(para) < 800:
+                    current_chunk += " " + para
+                else:
+                    if current_chunk:
+                        chunks.append(current_chunk.strip())
+                    current_chunk = para
+            if current_chunk:
+                chunks.append(current_chunk.strip())
+            
+            # Limit to 15 chunks max
+            chunks = chunks[:15]
+            
+            if not chunks:
+                chunks = [content[:2000]]  # Fallback
+            
+            self.context_chunks = chunks
             self._reinit_rlm()
             
             print(f"{COLOR_INFO}Analyzing content (this may take 30-60 seconds)...{COLOR_RESET}")
