@@ -254,10 +254,12 @@ class InteractiveChat:
             
             print(f"{COLOR_INFO}✓ Extracted {len(content)} chars of text{COLOR_RESET}")
             
-            # Use content as context
+            # Use content as context (limit to 15000 chars to speed up)
+            content = content[:15000]
             self.context_chunks = [f"Content from {url}:\n\n{content}"]
             self._reinit_rlm()
             
+            print(f"{COLOR_INFO}Analyzing content (this may take 30-60 seconds)...{COLOR_RESET}")
             answer, conf = self.process_query(f"Analyze and summarize the main content from this URL: {url}")
             print(f"\n{COLOR_ANSWER}{'=' * 60}\nSUMMARY\n{'=' * 60}{COLOR_RESET}")
             print(f"{COLOR_ANSWER}{answer}{COLOR_RESET}")
