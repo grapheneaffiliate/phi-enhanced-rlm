@@ -112,7 +112,7 @@ class OpenRouterBackend:
         """
         return self.generate(prompt, max_tokens)
     
-    def generate(self, prompt: str, max_tokens: int = 256, 
+    def generate(self, prompt: str, max_tokens: int = 2048, 
                  temperature: float = 0.7) -> str:
         """
         Generate a response from the LLM.

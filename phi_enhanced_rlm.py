@@ -162,7 +162,7 @@ class MockLLMBackend:
         self.rng = np.random.default_rng(seed)
         self.call_count = 0
     
-    def __call__(self, prompt: str, max_tokens: int = 256) -> str:
+    def __call__(self, prompt: str, max_tokens: int = 2048) -> str:
         """Return JSON-formatted LLM response."""
         self.call_count += 1
         
