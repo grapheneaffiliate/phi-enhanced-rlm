@@ -316,9 +316,7 @@ phi-enhanced-rlm/
 ├── phi_enhanced_rlm.py                 # Core RLM orchestrator
 ├── phi_separation_novel_mathematics.py # Mathematics library
 │
-├── rlm_trace.jsonl                     # Execution trace (generated)
-├── 2512.24601v1.pdf                    # Reference paper
-└── Novel_Mathematics_from_Phi_Separation.docx  # Documentation
+└── rlm_trace.jsonl                     # Execution trace (generated)
 ```
 
 ---
@@ -653,9 +651,10 @@ Passed: 6/6
 
 ## 📚 References
 
-Based on foundational research:
-- **"Recursive Language Models"** - arXiv preprint: `2512.24601v1` (Dec 2025)
-- Mathematical concepts derived from E8 Lie group theory, golden ratio properties, and information theory
+Mathematical concepts derived from:
+- E8 Lie group theory and exceptional geometry  
+- Golden ratio (φ) properties and information theory
+- Recursive Language Model architectures
 
 ## 🤝 Contributing
 
