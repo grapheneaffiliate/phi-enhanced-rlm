@@ -164,9 +164,23 @@ If no subquestions are needed, use an empty array: "subquestions": []
                 if hasattr(response, 'usage') and response.usage:
                     self.total_tokens += response.usage.total_tokens
                 
-                content = response.choices[0].message.content
+                message = response.choices[0].message
+                content = message.content or ""
+                
+                # Some models (like z-ai/glm-4.7) put content in reasoning field
+                if not content.strip():
+                    reasoning = getattr(message, 'reasoning', None)
+                    if reasoning:
+                        content = str(reasoning)
                 
                 # Try to parse as JSON, wrap if needed
+                if not content.strip():
+                    return json.dumps({
+                        "answer": "No response from model",
+                        "confidence": 0.5,
+                        "subquestions": []
+                    })
+                
                 return self._ensure_json_format(content)
                 
             except Exception as e:
