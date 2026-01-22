@@ -87,3 +87,8 @@ Thumbs.db
 
 # Project specific
 *.log
+
+# Environment files (never commit API keys!)
+.env
+.env.local
+.env.production
