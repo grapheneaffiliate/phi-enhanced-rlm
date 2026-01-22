@@ -44,8 +44,10 @@ Examples:
     
     if args.file:
         try:
-            with open(args.file, "r", encoding="utf-8") as f:
+            with open(args.file, "r", encoding="utf-8-sig") as f:
                 query = f.read().strip()
+            # Normalize whitespace (Windows echo can create weird line breaks)
+            query = " ".join(query.split())
             if not args.quiet:
                 print(f"✓ Loaded query from file: {args.file} ({len(query)} chars)")
         except FileNotFoundError:
