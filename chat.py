@@ -199,17 +199,22 @@ class InteractiveChat:
         
         return True
     
-    def _analyze_repo(self, source: str):
+    def _analyze_repo(self, source: str, query: str = None):
         """Analyze a GitHub repo."""
         try:
             from repo_analyzer import RepoAnalyzer
             print(f"{COLOR_INFO}Analyzing {source}...{COLOR_RESET}")
-            analyzer = RepoAnalyzer(self.backend, verbose=False)
-            result = analyzer.analyze(source, "Analyze this project and explain what it does.", max_depth=self.depth)
+            analyzer = RepoAnalyzer(self.backend, verbose=True)  # Show cloned files
+            if query is None:
+                query = "Provide a comprehensive analysis of this project: What does it do? What are its main components? What is its architecture?"
+            result = analyzer.analyze(source, query, max_depth=self.depth)
             if "error" in result:
                 print(f"{COLOR_ERROR}{result['error']}{COLOR_RESET}")
             else:
-                print(f"\n{COLOR_ANSWER}{result['answer']}{COLOR_RESET}")
+                # Ensure full answer is printed
+                answer = result['answer']
+                print(f"\n{COLOR_ANSWER}{'=' * 60}\nANALYSIS RESULT\n{'=' * 60}{COLOR_RESET}")
+                print(f"{COLOR_ANSWER}{answer}{COLOR_RESET}")
                 print(f"\n{COLOR_INFO}[Files: {result['files_analyzed']}, Confidence: {result['confidence']:.2%}]{COLOR_RESET}")
         except ImportError:
             print(f"{COLOR_ERROR}repo_analyzer.py not found{COLOR_RESET}")

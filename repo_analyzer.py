@@ -75,8 +75,10 @@ class ContentFetcher:
 class GitHubFetcher(ContentFetcher):
     """Fetch content from GitHub repositories."""
     
-    def __init__(self, temp_dir: Optional[str] = None):
+    def __init__(self, temp_dir: Optional[str] = None, keep_repo: bool = False):
         self.temp_dir = temp_dir or tempfile.mkdtemp(prefix="repo_analyzer_")
+        self.keep_repo = keep_repo
+        self.clone_path = None
     
     def fetch(self, source: str) -> Dict[str, str]:
         """Clone repo and extract relevant files."""
