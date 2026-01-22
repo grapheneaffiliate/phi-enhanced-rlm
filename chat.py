@@ -225,17 +225,42 @@ class InteractiveChat:
         """Analyze a URL."""
         try:
             import urllib.request
+            import re
             print(f"{COLOR_INFO}Fetching {url}...{COLOR_RESET}")
-            req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+            req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'})
             with urllib.request.urlopen(req, timeout=30) as resp:
-                content = resp.read().decode('utf-8', errors='ignore')[:50000]
+                html = resp.read().decode('utf-8', errors='ignore')
+            
+            # Extract text from HTML
+            # Remove script and style elements
+            html = re.sub(r'<script[^>]*>.*?</script>', '', html, flags=re.DOTALL | re.IGNORECASE)
+            html = re.sub(r'<style[^>]*>.*?</style>', '', html, flags=re.DOTALL | re.IGNORECASE)
+            html = re.sub(r'<nav[^>]*>.*?</nav>', '', html, flags=re.DOTALL | re.IGNORECASE)
+            html = re.sub(r'<header[^>]*>.*?</header>', '', html, flags=re.DOTALL | re.IGNORECASE)
+            html = re.sub(r'<footer[^>]*>.*?</footer>', '', html, flags=re.DOTALL | re.IGNORECASE)
+            
+            # Remove HTML tags but keep content
+            text = re.sub(r'<[^>]+>', ' ', html)
+            # Clean up whitespace
+            text = re.sub(r'\s+', ' ', text).strip()
+            # Decode HTML entities
+            text = text.replace('&nbsp;', ' ').replace('&amp;', '&').replace('&lt;', '<').replace('&gt;', '>')
+            
+            content = text[:30000]  # Limit size
+            
+            if len(content) < 100:
+                print(f"{COLOR_ERROR}Could not extract text content from URL{COLOR_RESET}")
+                return
+            
+            print(f"{COLOR_INFO}✓ Extracted {len(content)} chars of text{COLOR_RESET}")
             
             # Use content as context
-            self.context_chunks = [f"URL Content:\n{content[:10000]}"]
+            self.context_chunks = [f"Content from {url}:\n\n{content}"]
             self._reinit_rlm()
             
-            answer, conf = self.process_query("Summarize the main content of this page.")
-            print(f"\n{COLOR_ANSWER}{answer}{COLOR_RESET}")
+            answer, conf = self.process_query(f"Analyze and summarize the main content from this URL: {url}")
+            print(f"\n{COLOR_ANSWER}{'=' * 60}\nSUMMARY\n{'=' * 60}{COLOR_RESET}")
+            print(f"{COLOR_ANSWER}{answer}{COLOR_RESET}")
             print(f"\n{COLOR_INFO}[Confidence: {conf:.2%}]{COLOR_RESET}")
             
             # Restore default context

@@ -99,7 +99,7 @@ class OpenRouterBackend:
         self.call_count = 0
         self.total_tokens = 0
     
-    def __call__(self, prompt: str, max_tokens: int = 256) -> str:
+    def __call__(self, prompt: str, max_tokens: int = 2048) -> str:
         """
         Call the LLM with the given prompt.
         
