@@ -82,7 +82,7 @@ class InteractiveChat:
         self.rlm = PhiEnhancedRLM(
             base_llm_callable=self.backend,
             context_chunks=self.context_chunks,
-            total_budget_tokens=4096,
+            total_budget_tokens=16384,  # Increased for longer answers
             trace_file="chat_trace.jsonl"
         )
         print(f"{COLOR_INFO}✓ RLM ready ({len(self.context_chunks)} chunks, depth={self.depth}){COLOR_RESET}")
