@@ -20,6 +20,19 @@ Then just type your questions. Special commands:
 import os
 import sys
 import json
+import logging
+import re
+from pathlib import Path
+from contextlib import contextmanager
+from html.parser import HTMLParser
+from io import StringIO
+
+# Configure logging
+logging.basicConfig(
+    level=logging.WARNING,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
 
 # Add rich colors if available
 try:
@@ -41,13 +54,64 @@ from openrouter_backend import OpenRouterBackend
 from phi_enhanced_rlm import PhiEnhancedRLM
 
 
+class HTMLTextExtractor(HTMLParser):
+    """Extract clean text from HTML, skipping script/style/nav elements."""
+
+    def __init__(self):
+        super().__init__()
+        self.text_parts = []
+        self.skip_tags = {'script', 'style', 'nav', 'header', 'footer', 'iframe', 'noscript'}
+        self.current_skip_tag = None
+
+    def handle_starttag(self, tag, attrs):
+        if tag in self.skip_tags:
+            self.current_skip_tag = tag
+
+    def handle_endtag(self, tag):
+        if tag == self.current_skip_tag:
+            self.current_skip_tag = None
+
+    def handle_data(self, data):
+        if self.current_skip_tag is None:
+            text = data.strip()
+            if text:
+                self.text_parts.append(text)
+
+    def get_text(self):
+        return ' '.join(self.text_parts)
+
+
 class InteractiveChat:
     """Interactive chat interface for PHI-Enhanced RLM."""
-    
+
+    # Configuration constants
+    DEFAULT_DEPTH = 3
+    MIN_DEPTH = 0
+    MAX_DEPTH = 10
+    TOTAL_BUDGET_TOKENS = 16384
+
+    # URL fetching limits
+    URL_TIMEOUT_SECONDS = 30
+    MAX_URL_CONTENT_SIZE = 30000
+    MAX_URL_PROCESSED_SIZE = 20000
+    MIN_CONTENT_LENGTH = 100
+
+    # Chunking parameters
+    CHUNK_MIN_SIZE = 500
+    CHUNK_MAX_SIZE = 1000
+    CHUNK_TARGET_SIZE = 800
+    MIN_PARAGRAPH_LENGTH = 20
+    MAX_CHUNKS = 15
+    FALLBACK_CHUNK_SIZE = 2000
+
+    # File safety
+    ALLOWED_FILE_EXTENSIONS = {'.txt', '.md', '.json', '.py', '.js', '.html', '.css', '.yml', '.yaml', '.xml', '.csv', '.log'}
+    MAX_FILE_SIZE = 10 * 1024 * 1024  # 10 MB
+
     def __init__(self):
         self.backend = None
         self.rlm = None
-        self.depth = 3
+        self.depth = self.DEFAULT_DEPTH
         self.context_chunks = self._default_context()
         
     def _default_context(self):
@@ -82,18 +146,75 @@ class InteractiveChat:
         self.rlm = PhiEnhancedRLM(
             base_llm_callable=self.backend,
             context_chunks=self.context_chunks,
-            total_budget_tokens=16384,  # Increased for longer answers
+            total_budget_tokens=self.TOTAL_BUDGET_TOKENS,
             trace_file="chat_trace.jsonl"
         )
         print(f"{COLOR_INFO}✓ RLM ready ({len(self.context_chunks)} chunks, depth={self.depth}){COLOR_RESET}")
-    
+
+    @contextmanager
+    def _temporary_context(self, new_chunks):
+        """Context manager for temporarily replacing context chunks."""
+        old_chunks = self.context_chunks
+        try:
+            self.context_chunks = new_chunks
+            self._reinit_rlm()
+            yield
+        finally:
+            self.context_chunks = old_chunks
+            self._reinit_rlm()
+
+    def _validate_file_path(self, file_path: str) -> Path:
+        """
+        Validate file path for security.
+
+        Args:
+            file_path: Path to validate
+
+        Returns:
+            Validated Path object
+
+        Raises:
+            ValueError: If path is invalid or unsafe
+        """
+        try:
+            path = Path(file_path).resolve()
+        except (OSError, RuntimeError) as e:
+            logger.error(f"Invalid path: {file_path} - {e}")
+            raise ValueError(f"Invalid file path: {file_path}")
+
+        # Check if file exists
+        if not path.exists():
+            raise ValueError(f"File not found: {file_path}")
+
+        if not path.is_file():
+            raise ValueError(f"Not a file: {file_path}")
+
+        # Check file extension
+        if path.suffix.lower() not in self.ALLOWED_FILE_EXTENSIONS:
+            raise ValueError(f"File type not allowed: {path.suffix}. Allowed: {', '.join(sorted(self.ALLOWED_FILE_EXTENSIONS))}")
+
+        # Check file size
+        file_size = path.stat().st_size
+        if file_size > self.MAX_FILE_SIZE:
+            raise ValueError(f"File too large: {file_size / 1024 / 1024:.1f} MB (max: {self.MAX_FILE_SIZE / 1024 / 1024:.1f} MB)")
+
+        # Check for path traversal attempts
+        cwd = Path.cwd().resolve()
+        try:
+            path.relative_to(cwd)
+        except ValueError:
+            # File is outside current directory - warn but allow
+            logger.warning(f"File outside current directory: {path}")
+
+        return path
+
     def process_query(self, query: str) -> str:
         """Process a query and return the answer."""
         # Clear trace file for fresh trace
         try:
             open("chat_trace.jsonl", "w").close()
-        except:
-            pass
+        except (IOError, OSError) as e:
+            logger.warning(f"Could not clear trace file: {e}")
         
         result = self.rlm.recursive_solve(query, max_depth=self.depth)
         
@@ -103,9 +224,9 @@ class InteractiveChat:
             parsed = json.loads(answer)
             if "answer" in parsed:
                 answer = parsed["answer"]
-        except:
-            pass
-        
+        except (json.JSONDecodeError, TypeError, KeyError) as e:
+            logger.debug(f"Answer is not JSON or missing 'answer' key: {e}")
+
         return answer, result.confidence
     
     def handle_command(self, cmd: str) -> bool:
@@ -135,10 +256,14 @@ class InteractiveChat:
         
         elif command == "/depth":
             try:
-                self.depth = int(arg)
-                print(f"{COLOR_INFO}✓ Depth set to {self.depth}{COLOR_RESET}")
-            except:
-                print(f"{COLOR_ERROR}Usage: /depth <number>{COLOR_RESET}")
+                depth = int(arg)
+                if depth < self.MIN_DEPTH or depth > self.MAX_DEPTH:
+                    print(f"{COLOR_ERROR}Depth must be between {self.MIN_DEPTH} and {self.MAX_DEPTH}{COLOR_RESET}")
+                else:
+                    self.depth = depth
+                    print(f"{COLOR_INFO}✓ Depth set to {self.depth}{COLOR_RESET}")
+            except ValueError:
+                print(f"{COLOR_ERROR}Usage: /depth <number> (range: {self.MIN_DEPTH}-{self.MAX_DEPTH}){COLOR_RESET}")
         
         elif command == "/model":
             print(f"{COLOR_INFO}Model: {self.backend.config.model}{COLOR_RESET}")
@@ -153,16 +278,18 @@ class InteractiveChat:
                 print(f"{COLOR_ERROR}Usage: /file <path>{COLOR_RESET}")
             else:
                 try:
-                    with open(arg, "r", encoding="utf-8-sig") as f:
+                    path = self._validate_file_path(arg)
+                    with open(path, "r", encoding="utf-8-sig") as f:
                         query = " ".join(f.read().split())
-                    print(f"{COLOR_INFO}✓ Loaded {len(query)} chars from {arg}{COLOR_RESET}")
+                    print(f"{COLOR_INFO}✓ Loaded {len(query)} chars from {path.name}{COLOR_RESET}")
                     answer, conf = self.process_query(query)
                     print(f"\n{COLOR_ANSWER}{answer}{COLOR_RESET}")
                     print(f"\n{COLOR_INFO}[Confidence: {conf:.2%}]{COLOR_RESET}")
-                except FileNotFoundError:
-                    print(f"{COLOR_ERROR}File not found: {arg}{COLOR_RESET}")
-                except Exception as e:
-                    print(f"{COLOR_ERROR}Error: {e}{COLOR_RESET}")
+                except ValueError as e:
+                    print(f"{COLOR_ERROR}{e}{COLOR_RESET}")
+                except (IOError, OSError, UnicodeDecodeError) as e:
+                    logger.error(f"Error reading file {arg}: {e}")
+                    print(f"{COLOR_ERROR}Error reading file: {e}{COLOR_RESET}")
         
         elif command == "/repo":
             if not arg:
@@ -187,11 +314,18 @@ class InteractiveChat:
                 print(f"{COLOR_ERROR}Usage: /context <file.json>{COLOR_RESET}")
             else:
                 try:
-                    with open(arg, "r", encoding="utf-8") as f:
-                        self.context_chunks = json.load(f)
+                    path = self._validate_file_path(arg)
+                    with open(path, "r", encoding="utf-8") as f:
+                        chunks = json.load(f)
+                    if not isinstance(chunks, list):
+                        raise ValueError("Context file must contain a JSON array")
+                    self.context_chunks = chunks
                     self._reinit_rlm()
-                    print(f"{COLOR_INFO}✓ Loaded {len(self.context_chunks)} chunks from {arg}{COLOR_RESET}")
-                except Exception as e:
+                    print(f"{COLOR_INFO}✓ Loaded {len(self.context_chunks)} chunks from {path.name}{COLOR_RESET}")
+                except ValueError as e:
+                    print(f"{COLOR_ERROR}{e}{COLOR_RESET}")
+                except (json.JSONDecodeError, IOError, OSError) as e:
+                    logger.error(f"Error loading context from {arg}: {e}")
                     print(f"{COLOR_ERROR}Error loading context: {e}{COLOR_RESET}")
         
         else:
@@ -222,93 +356,116 @@ class InteractiveChat:
             print(f"{COLOR_ERROR}Error: {e}{COLOR_RESET}")
     
     def _analyze_url(self, url: str):
-        """Analyze a URL."""
+        """Analyze a URL with proper resource limits and HTML parsing."""
         try:
             import urllib.request
-            import re
+            import urllib.error
+
             print(f"{COLOR_INFO}Fetching {url}...{COLOR_RESET}")
-            req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'})
-            with urllib.request.urlopen(req, timeout=30) as resp:
-                html = resp.read().decode('utf-8', errors='ignore')
-            
-            # Extract text from HTML
-            # Remove script and style elements
-            html = re.sub(r'<script[^>]*>.*?</script>', '', html, flags=re.DOTALL | re.IGNORECASE)
-            html = re.sub(r'<style[^>]*>.*?</style>', '', html, flags=re.DOTALL | re.IGNORECASE)
-            html = re.sub(r'<nav[^>]*>.*?</nav>', '', html, flags=re.DOTALL | re.IGNORECASE)
-            html = re.sub(r'<header[^>]*>.*?</header>', '', html, flags=re.DOTALL | re.IGNORECASE)
-            html = re.sub(r'<footer[^>]*>.*?</footer>', '', html, flags=re.DOTALL | re.IGNORECASE)
-            
-            # Remove HTML tags but keep content
-            text = re.sub(r'<[^>]+>', ' ', html)
-            # Clean up whitespace
-            text = re.sub(r'\s+', ' ', text).strip()
-            # Decode HTML entities
-            text = text.replace('&nbsp;', ' ').replace('&amp;', '&').replace('&lt;', '<').replace('&gt;', '>')
-            
-            content = text[:30000]  # Limit size
-            
-            if len(content) < 100:
-                print(f"{COLOR_ERROR}Could not extract text content from URL{COLOR_RESET}")
+
+            # Validate URL scheme
+            if not url.startswith(('http://', 'https://')):
+                print(f"{COLOR_ERROR}Invalid URL scheme. Use http:// or https://{COLOR_RESET}")
                 return
-            
-            print(f"{COLOR_INFO}✓ Extracted {len(content)} chars of text{COLOR_RESET}")
-            
-            # Split content into multiple chunks for better φ-Gram selection
-            content = content[:20000]  # Limit total size
-            
-            # Split by paragraphs (double newlines or periods followed by space)
-            import re
+
+            # Fetch with resource limits
+            req = urllib.request.Request(
+                url,
+                headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'}
+            )
+
+            try:
+                with urllib.request.urlopen(req, timeout=self.URL_TIMEOUT_SECONDS) as resp:
+                    # Check content type
+                    content_type = resp.headers.get('Content-Type', '')
+                    if 'text/html' not in content_type.lower():
+                        logger.warning(f"Non-HTML content type: {content_type}")
+
+                    # Read with size limit
+                    raw_data = resp.read(self.MAX_URL_CONTENT_SIZE + 1)
+                    if len(raw_data) > self.MAX_URL_CONTENT_SIZE:
+                        logger.warning(f"Content truncated at {self.MAX_URL_CONTENT_SIZE} bytes")
+                        raw_data = raw_data[:self.MAX_URL_CONTENT_SIZE]
+
+                    html = raw_data.decode('utf-8', errors='ignore')
+            except urllib.error.HTTPError as e:
+                print(f"{COLOR_ERROR}HTTP Error {e.code}: {e.reason}{COLOR_RESET}")
+                logger.error(f"HTTP error fetching {url}: {e}")
+                return
+            except urllib.error.URLError as e:
+                print(f"{COLOR_ERROR}URL Error: {e.reason}{COLOR_RESET}")
+                logger.error(f"URL error fetching {url}: {e}")
+                return
+            except TimeoutError:
+                print(f"{COLOR_ERROR}Request timed out after {self.URL_TIMEOUT_SECONDS}s{COLOR_RESET}")
+                return
+
+            # Extract text using proper HTML parser
+            parser = HTMLTextExtractor()
+            try:
+                parser.feed(html)
+                text = parser.get_text()
+            except Exception as e:
+                logger.error(f"HTML parsing error: {e}")
+                print(f"{COLOR_ERROR}Error parsing HTML content{COLOR_RESET}")
+                return
+
+            # Validate content
+            if len(text) < self.MIN_CONTENT_LENGTH:
+                print(f"{COLOR_ERROR}Could not extract sufficient text content from URL{COLOR_RESET}")
+                return
+
+            print(f"{COLOR_INFO}✓ Extracted {len(text)} chars of text{COLOR_RESET}")
+
+            # Split content into chunks for better φ-Gram selection
+            content = text[:self.MAX_URL_PROCESSED_SIZE]
+
+            # Split by sentences and paragraphs
             paragraphs = re.split(r'\.\s+|\n\n+', content)
-            
-            # Group into chunks of ~500-1000 chars each
+
+            # Group into chunks
             chunks = []
             current_chunk = ""
             for para in paragraphs:
                 para = para.strip()
-                if not para or len(para) < 20:
+                if not para or len(para) < self.MIN_PARAGRAPH_LENGTH:
                     continue
-                if len(current_chunk) + len(para) < 800:
+                if len(current_chunk) + len(para) < self.CHUNK_TARGET_SIZE:
                     current_chunk += " " + para
                 else:
                     if current_chunk:
                         chunks.append(current_chunk.strip())
                     current_chunk = para
+
             if current_chunk:
                 chunks.append(current_chunk.strip())
-            
-            # Limit to 15 chunks max
-            chunks = chunks[:15]
-            
+
+            # Limit chunks
+            chunks = chunks[:self.MAX_CHUNKS]
+
             if not chunks:
-                chunks = [content[:2000]]  # Fallback
-            
-            self.context_chunks = chunks
-            self._reinit_rlm()
-            
+                chunks = [content[:self.FALLBACK_CHUNK_SIZE]]
+
             print(f"{COLOR_INFO}Analyzing content (this may take 30-60 seconds)...{COLOR_RESET}")
-            sys.stdout.flush()  # Ensure message shows before API call
-            
+            sys.stdout.flush()
+
+            # Use context manager for temporary context
             try:
-                answer, conf = self.process_query(f"Analyze and summarize the main content from this URL: {url}")
+                with self._temporary_context(chunks):
+                    answer, conf = self.process_query(f"Analyze and summarize the main content from this URL: {url}")
+                    print(f"\n{COLOR_ANSWER}{'=' * 60}\nSUMMARY\n{'=' * 60}{COLOR_RESET}")
+                    print(f"{COLOR_ANSWER}{answer}{COLOR_RESET}")
+                    print(f"\n{COLOR_INFO}[Confidence: {conf:.2%}]{COLOR_RESET}")
             except KeyboardInterrupt:
                 print(f"\n{COLOR_ERROR}Analysis cancelled by user.{COLOR_RESET}")
-                self.context_chunks = self._default_context()
-                self._reinit_rlm()
                 return
             except Exception as e:
-                print(f"\n{COLOR_ERROR}API Error: {e}{COLOR_RESET}")
-                self.context_chunks = self._default_context()
-                self._reinit_rlm()
+                logger.error(f"Error during analysis: {e}")
+                print(f"\n{COLOR_ERROR}Analysis error: {e}{COLOR_RESET}")
                 return
-            print(f"\n{COLOR_ANSWER}{'=' * 60}\nSUMMARY\n{'=' * 60}{COLOR_RESET}")
-            print(f"{COLOR_ANSWER}{answer}{COLOR_RESET}")
-            print(f"\n{COLOR_INFO}[Confidence: {conf:.2%}]{COLOR_RESET}")
-            
-            # Restore default context
-            self.context_chunks = self._default_context()
-            self._reinit_rlm()
+
         except Exception as e:
+            logger.error(f"Unexpected error in _analyze_url: {e}")
             print(f"{COLOR_ERROR}Error: {e}{COLOR_RESET}")
     
     def _analyze_local(self, path: str):
