@@ -287,7 +287,20 @@ class InteractiveChat:
             self._reinit_rlm()
             
             print(f"{COLOR_INFO}Analyzing content (this may take 30-60 seconds)...{COLOR_RESET}")
-            answer, conf = self.process_query(f"Analyze and summarize the main content from this URL: {url}")
+            sys.stdout.flush()  # Ensure message shows before API call
+            
+            try:
+                answer, conf = self.process_query(f"Analyze and summarize the main content from this URL: {url}")
+            except KeyboardInterrupt:
+                print(f"\n{COLOR_ERROR}Analysis cancelled by user.{COLOR_RESET}")
+                self.context_chunks = self._default_context()
+                self._reinit_rlm()
+                return
+            except Exception as e:
+                print(f"\n{COLOR_ERROR}API Error: {e}{COLOR_RESET}")
+                self.context_chunks = self._default_context()
+                self._reinit_rlm()
+                return
             print(f"\n{COLOR_ANSWER}{'=' * 60}\nSUMMARY\n{'=' * 60}{COLOR_RESET}")
             print(f"{COLOR_ANSWER}{answer}{COLOR_RESET}")
             print(f"\n{COLOR_INFO}[Confidence: {conf:.2%}]{COLOR_RESET}")
