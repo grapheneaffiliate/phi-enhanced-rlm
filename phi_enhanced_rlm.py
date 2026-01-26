@@ -1,4 +1,12 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+import sys as _sys
+import io as _io
+# Fix Windows console encoding
+if _sys.platform == 'win32':
+    _sys.stdout = _io.TextIOWrapper(_sys.stdout.buffer, encoding='utf-8', errors='replace')
+    _sys.stderr = _io.TextIOWrapper(_sys.stderr.buffer, encoding='utf-8', errors='replace')
+
 """
 PHI-ENHANCED RECURSIVE LANGUAGE MODEL (RLM) FRAMEWORK
 ======================================================
@@ -18,14 +26,20 @@ Implements complete recursive reasoning with:
 import numpy as np
 import hashlib
 import json
+import asyncio
+import concurrent.futures
 from itertools import combinations
 from typing import List, Dict, Any, Optional, Tuple, Union, Callable
 from dataclasses import dataclass, field
 from pathlib import Path
 import warnings
 import logging
+import time
 
 logger = logging.getLogger(__name__)
+
+# Thread pool for parallel processing
+_executor = concurrent.futures.ThreadPoolExecutor(max_workers=4)
 
 # Import from the provided mathematics library
 from phi_separation_novel_mathematics import (
@@ -605,10 +619,229 @@ class PhiEnhancedRLM:
             "collision_selected": self.phi_gram.submatrix(selected_ids).has_collision() if selected_ids else False,
             "confidence": round(confidence, 4),
             "info_flow": round(info_flow, 4),
-            "stop_reason": stop_reason
+            "stop_reason": stop_reason,
+            "timestamp": time.time()
         }
         with open(self.trace_file, "a") as f:
             f.write(json.dumps(entry) + "\n")
+    
+    # =========================================================================
+    # PARALLEL SUBQUESTION PROCESSING
+    # =========================================================================
+    
+    def enable_parallel(self, enabled: bool = True):
+        """Enable or disable parallel subquestion processing."""
+        self.parallel_enabled = enabled
+        logger.info(f"Parallel processing: {'enabled' if enabled else 'disabled'}")
+    
+    def _process_subquestions_parallel(self, subquestions: List[str], 
+                                        depth: int, path: Tuple[int, ...],
+                                        max_depth: int) -> List['SubCallResult']:
+        """
+        Process subquestions in parallel using thread pool.
+        
+        Args:
+            subquestions: List of subquestions to process
+            depth: Current depth
+            path: Current path
+            max_depth: Maximum depth
+            
+        Returns:
+            List of SubCallResults
+        """
+        def process_one(args):
+            i, subq = args
+            return self.recursive_solve(subq, depth + 1, path + (i,), max_depth)
+        
+        # Submit all tasks
+        with concurrent.futures.ThreadPoolExecutor(max_workers=min(len(subquestions), 3)) as executor:
+            futures = list(executor.map(process_one, enumerate(subquestions)))
+        
+        return list(futures)
+    
+    async def recursive_solve_async(self, query: str, depth: int = 0,
+                                     path: Tuple[int, ...] = (),
+                                     max_depth: int = 5) -> 'SubCallResult':
+        """
+        Async version of recursive_solve for use with asyncio.
+        
+        Uses asyncio.to_thread for LLM calls to avoid blocking.
+        """
+        # Get budget for this depth
+        budget = self.get_budget_for_depth(depth)
+        
+        # Select chunks
+        selected = self.select_chunks_for_subcall(query=query, max_chunks=3)
+        selected_ids = [c.id for c in selected]
+        selected_text = "\n".join([c.text for c in selected])
+        
+        # Build prompt
+        prompt = f"""Query: {query}
+
+Context:
+{selected_text}
+
+Recursion depth: {depth}
+Remaining budget: {budget} tokens
+
+Respond in JSON format:
+{{"answer": "your answer", "confidence": 0.0-1.0, "subquestions": ["...", "..."]}}
+"""
+        
+        # Call LLM in thread to avoid blocking
+        try:
+            response_str = await asyncio.to_thread(self.llm, prompt, budget)
+            response = json.loads(response_str)
+            answer = response.get("answer", "")
+            raw_confidence = response.get("confidence", 0.5)
+            subquestions = response.get("subquestions", [])
+        except Exception as e:
+            answer = f"Error: {e}"
+            raw_confidence = 0.3
+            subquestions = []
+        
+        # QEC verification (can also be parallelized)
+        revised_conf, verifier_results = await asyncio.to_thread(
+            self.run_qec_verification, answer, selected_text, budget // 2
+        )
+        confidence = (raw_confidence + revised_conf) / 2
+        
+        # Update state
+        self.confidence_history.append(confidence)
+        answer_tokens = simple_tokenize(answer)
+        new_info = self.compute_info_units(answer_tokens)
+        self.update_information_state(new_info)
+        
+        # Determine stop reason
+        stop_reason = "none"
+        if depth >= max_depth:
+            stop_reason = "depth"
+        elif self.should_verify_early_stop():
+            stop_reason = "momentum"
+        elif not self.should_continue_recursion():
+            stop_reason = "spectral"
+        
+        # Compute logdet
+        sub_gram = self.phi_gram.submatrix(selected_ids)
+        logdet_selected = sub_gram.log_determinant
+        
+        # Log
+        self.log_trace(depth, query, selected_ids, logdet_selected, confidence, new_info, stop_reason)
+        
+        if stop_reason != "none" or not subquestions:
+            return SubCallResult(
+                value=answer,
+                confidence=confidence,
+                metadata={
+                    "depth": depth,
+                    "path": path,
+                    "stop_reason": stop_reason if stop_reason != "none" else "no_subquestions",
+                    "selected_ids": selected_ids,
+                }
+            )
+        
+        # Recurse in parallel using asyncio.gather
+        tasks = [
+            self.recursive_solve_async(subq, depth + 1, path + (i,), max_depth)
+            for i, subq in enumerate(subquestions[:3])
+        ]
+        sub_results = await asyncio.gather(*tasks)
+        
+        # Aggregate
+        aggregated = self.aggregate_results(list(sub_results))
+        final_answer = f"{answer}\n\nSub-analysis: {aggregated.value}"
+        final_conf = (confidence + aggregated.confidence) / 2
+        
+        return SubCallResult(
+            value=final_answer,
+            confidence=final_conf,
+            metadata={
+                "depth": depth,
+                "path": path,
+                "stop_reason": "recursion_complete",
+                "n_subquestions": len(subquestions),
+            }
+        )
+    
+    # =========================================================================
+    # REASONING TREE VISUALIZATION
+    # =========================================================================
+    
+    def get_reasoning_tree(self) -> Dict[str, Any]:
+        """
+        Get the reasoning tree from the trace file.
+        
+        Returns:
+            Dict containing tree structure with confidence at each node
+        """
+        trace = []
+        try:
+            with open(self.trace_file, "r") as f:
+                for line in f:
+                    if line.strip():
+                        trace.append(json.loads(line))
+        except FileNotFoundError:
+            return {"error": "No trace file found"}
+        
+        if not trace:
+            return {"error": "Empty trace"}
+        
+        # Build tree structure
+        tree = {
+            "total_nodes": len(trace),
+            "max_depth": max(e.get("depth", 0) for e in trace),
+            "avg_confidence": sum(e.get("confidence", 0) for e in trace) / len(trace),
+            "nodes": []
+        }
+        
+        for entry in trace:
+            node = {
+                "depth": entry.get("depth", 0),
+                "query": entry.get("query", "")[:50],
+                "confidence": entry.get("confidence", 0),
+                "info_flow": entry.get("info_flow", 0),
+                "chunks": entry.get("selected_ids", []),
+                "stop_reason": entry.get("stop_reason", "none"),
+                "logdet": entry.get("logdet_selected", 0),
+            }
+            tree["nodes"].append(node)
+        
+        return tree
+    
+    def print_reasoning_tree(self):
+        """Print formatted reasoning tree to console."""
+        tree = self.get_reasoning_tree()
+        
+        if "error" in tree:
+            print(f"Error: {tree['error']}")
+            return
+        
+        print("\n" + "=" * 60)
+        print("REASONING TREE")
+        print("=" * 60)
+        print(f"Total nodes: {tree['total_nodes']}")
+        print(f"Max depth: {tree['max_depth']}")
+        print(f"Avg confidence: {tree['avg_confidence']:.2%}")
+        print("-" * 60)
+        
+        for node in tree["nodes"]:
+            indent = "  " * node["depth"]
+            conf = node["confidence"]
+            
+            # Color indicator based on confidence
+            if conf >= 0.8:
+                indicator = "🟢"
+            elif conf >= 0.6:
+                indicator = "🟡"
+            else:
+                indicator = "🔴"
+            
+            print(f"{indent}{indicator} D{node['depth']}: {node['query'][:40]}...")
+            print(f"{indent}   Conf: {conf:.1%} | Info: {node['info_flow']:.1f} | Chunks: {node['chunks']}")
+            if node["stop_reason"] != "none":
+                print(f"{indent}   └─ Stopped: {node['stop_reason']}")
+        
+        print("=" * 60)
 
     # =========================================================================
     # STEP 1: MAIN RECURSIVE SOLVE ENGINE
@@ -718,10 +951,20 @@ Respond in JSON format:
                 metadata={"depth": depth, "path": path, "stop_reason": "no_subquestions"}
             )
         
-        sub_results = []
-        for i, subq in enumerate(subquestions[:3]):  # Limit to 3 subquestions
-            sub_result = self.recursive_solve(subq, depth + 1, path + (i,), max_depth)
-            sub_results.append(sub_result)
+        # Process subquestions (parallel if enabled)
+        subquestions_limited = subquestions[:3]  # Limit to 3 subquestions
+        
+        if getattr(self, 'parallel_enabled', False) and len(subquestions_limited) > 1:
+            # Parallel processing
+            sub_results = self._process_subquestions_parallel(
+                subquestions_limited, depth, path, max_depth
+            )
+        else:
+            # Sequential processing
+            sub_results = []
+            for i, subq in enumerate(subquestions_limited):
+                sub_result = self.recursive_solve(subq, depth + 1, path + (i,), max_depth)
+                sub_results.append(sub_result)
         
         # Aggregate sub-results with torsion correction
         aggregated = self.aggregate_results(sub_results)

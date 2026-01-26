@@ -1,404 +1,459 @@
-# PHI-Enhanced Recursive Language Model (RLM) Framework
+# PHI-Enhanced Recursive Language Model (RLM) Framework v2.0
 
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Mathematics](https://img.shields.io/badge/Mathematics-E8%20%7C%20%CF%86%20Separation-purple.svg)]()
+[![API](https://img.shields.io/badge/API-FastAPI-green.svg)]()
 
-A groundbreaking implementation of Recursive Language Models enhanced with φ-Separation Mathematics, leveraging the profound connections between the golden ratio (φ), E8 Lie group geometry, and advanced information theory.
+A groundbreaking implementation of Recursive Language Models enhanced with φ-Separation Mathematics, featuring streaming responses, document analysis, REST API, and parallel processing.
 
-## 🚀 Quick Start (5 Minutes)
+## 🆕 What's New in v2.0
 
-### Step 1: Install Dependencies
-
-```bash
-pip install numpy scipy openai python-dotenv
-```
-
-### Step 2: Configure API Key
-
-1. Copy the template file:
-   ```bash
-   cp .env.template .env
-   ```
-
-2. Edit `.env` and add your OpenRouter API key:
-   ```bash
-   # Get your key from: https://openrouter.ai/keys
-   OPENROUTER_API_KEY=sk-or-v1-your-key-here
-   ```
-
-### Step 3: Run the System
-
-```bash
-# Interactive chat mode (RECOMMENDED)
-python chat.py
-
-# Single query mode
-python run_rlm.py "What is the significance of phi in mathematics?"
-```
-
-That's it! The interactive chat lets you ask unlimited questions.
+- **📡 Streaming Output** - Real-time response streaming for long analyses
+- **📄 PDF/DOCX Support** - Analyze PDF and Word documents directly
+- **🌐 Better Web Extraction** - Trafilatura for clean article extraction
+- **💾 SQLite Embedding Cache** - Persistent cache survives restarts
+- **🔌 REST API** - FastAPI server with OpenAPI docs
+- **💬 Conversation Memory** - Stateful chat with context
+- **⚡ Parallel Processing** - Process subquestions concurrently
+- **📊 Confidence Visualization** - See the reasoning tree
+- **🖼️ Multi-modal Support** - Analyze images with vision models
+- **🔄 Comparison Mode** - Compare repos, URLs, or documents
+- **📝 Export Reports** - Save analyses as markdown
+- **🎨 Rich Progress** - Beautiful terminal UI with progress bars
 
 ---
 
-## 💬 Interactive Chat Mode (NEW!)
+## 🚀 Quick Start
 
-The easiest way to use the system is the interactive chat interface:
+### 1. Install Dependencies
+
+```bash
+cd RLM
+pip install -r requirements.txt
+```
+
+### 2. Configure API Key
+
+```bash
+cp .env.template .env
+# Edit .env and add: OPENROUTER_API_KEY=sk-or-v1-your-key
+```
+
+### 3. Run
+
+```bash
+# Interactive chat (recommended)
+python chat.py
+
+# REST API server
+python api.py
+# Then visit: http://localhost:8000/docs
+```
+
+---
+
+## 💬 Interactive Chat v2.0
+
+The feature-rich chat interface:
 
 ```bash
 python chat.py
 ```
 
-Once started, you have a persistent session where you can ask unlimited questions:
-
-```
-  PHI-ENHANCED RLM INTERACTIVE CHAT
-
-Initializing PHI-Enhanced RLM...
-✓ Backend ready: z-ai/glm-4.7
-✓ RLM ready (8 chunks, depth=3)
-
-Ready! Type your questions or /help for commands.
-
-You: What is E8?
-Thinking...
-
-PHI-RLM: E8 is the largest exceptional Lie group...
-
-[Confidence: 85.00%]
-
-You: /repo tensorflow/tensorflow
-Analyzing tensorflow/tensorflow...
-  Cloning https://github.com/tensorflow/tensorflow...
-  ✓ Extracted 45 files
-
-[Files: 45, Confidence: 82.00%]
-
-You: /url https://en.wikipedia.org/wiki/Golden_ratio
-Fetching https://en.wikipedia.org/wiki/Golden_ratio...
-✓ Extracted 30000 chars of text
-✓ RLM ready (12 chunks, depth=3)
-Analyzing content (this may take 30-60 seconds)...
-
-SUMMARY
-The golden ratio (φ) is an irrational number approximately equal to 1.618...
-
-[Confidence: 80.00%]
-
-You: /quit
-Goodbye!
-```
-
-### Chat Commands
+### All Commands
 
 | Command | Description |
 |---------|-------------|
-| `<question>` | Ask any question directly |
-| `/repo owner/repo` | Analyze a GitHub repository |
-| `/url https://...` | Fetch and analyze any URL |
+| `<question>` | Ask any question |
+| `/repo owner/repo` | Analyze GitHub repository |
+| `/url https://...` | Analyze web page (trafilatura extraction) |
 | `/local ./path` | Analyze local directory |
-| `/file query.txt` | Load query from file |
-| `/depth N` | Set recursion depth (default: 3) |
-| `/context file.json` | Load custom context chunks |
-| `/reset` | Reset to default context |
+| `/pdf path.pdf` | **NEW** Analyze PDF document |
+| `/doc path.docx` | **NEW** Analyze Word document |
+| `/image path.png` | **NEW** Describe & analyze image |
+| `/compare s1 s2` | **NEW** Compare two sources |
+| `/export file.md` | **NEW** Export last analysis |
+| `/history` | **NEW** Show query history |
+| `/stream on\|off` | **NEW** Toggle streaming |
+| `/trace` | **NEW** Show reasoning tree |
+| `/depth N` | Set recursion depth (0-10) |
+| `/context file.json` | Load custom context |
+| `/reset` | Reset context and history |
 | `/model` | Show current model |
 | `/help` | Show all commands |
-| `/quit` | Exit chat |
+| `/quit` | Exit |
+
+### Example Session
+
+```
+  PHI-ENHANCED RLM INTERACTIVE CHAT v2.0
+
+✓ Backend ready: anthropic/claude-3.5-sonnet
+✓ RLM ready (8 chunks, depth=3)
+
+You: What is the golden ratio?
+Thinking...
+
+╭─ PHI-RLM Response ────────────────────────────────────────╮
+│ The golden ratio (φ) is approximately 1.618...           │
+╰───────────────────────────────────────────────────────────╯
+Confidence: 85.0%
+
+You: /pdf research_paper.pdf
+Extracting PDF: research_paper.pdf...
+✓ Extracted: Novel Methods (12 pages)
+Analyzing 15 sections...
+
+╭─ PHI-RLM Response ────────────────────────────────────────╮
+│ This paper presents a novel approach to...               │
+╰───────────────────────────────────────────────────────────╯
+Confidence: 82.0%
+
+You: /export analysis.md
+✓ Exported to analysis.md
+```
 
 ---
 
-## 🔍 Repository Analyzer (NEW!)
+## 🔌 REST API
 
-Analyze any GitHub repository, URL, or local directory:
+Start the FastAPI server:
 
 ```bash
-# Analyze GitHub repos
-python repo_analyzer.py owner/repo "What does this project do?"
-python repo_analyzer.py https://github.com/owner/repo "Assess the architecture"
-
-# Analyze URLs
-python repo_analyzer.py https://example.com/page "Summarize this content"
-
-# Analyze local code
-python repo_analyzer.py ./my/project "Find security issues"
-
-# Save output to file
-python repo_analyzer.py owner/repo -o report.json
+python api.py
+# Or with auto-reload:
+uvicorn api:app --reload --port 8000
 ```
 
-**Features:**
-- Shallow clones GitHub repos (fast)
-- Extracts relevant code files (.py, .js, .ts, etc.)
-- Skips node_modules, .git, __pycache__
-- Prioritizes README, package.json, requirements.txt
-- Uses φ-Gram chunk selection for diversity
-- Returns confidence scores
+### Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/` | API info |
+| GET | `/status` | System status & stats |
+| GET | `/docs` | Swagger UI |
+| GET | `/redoc` | ReDoc documentation |
+| POST | `/analyze` | Analyze query with RLM |
+| POST | `/chat` | Chat with memory |
+| POST | `/compare` | Compare two sources |
+| GET | `/history` | Get query history |
+| DELETE | `/session/{id}` | Delete chat session |
+
+### Example: Analyze
+
+```bash
+curl -X POST http://localhost:8000/analyze \
+  -H "Content-Type: application/json" \
+  -d '{
+    "query": "What is E8 symmetry?",
+    "max_depth": 3,
+    "stream": false
+  }'
+```
+
+Response:
+```json
+{
+  "answer": "E8 is the largest exceptional Lie group...",
+  "confidence": 0.85,
+  "depth_reached": 2,
+  "stop_reason": "momentum",
+  "chunks_used": [0, 3, 5],
+  "trace": [...],
+  "timestamp": "2024-01-26T12:00:00Z"
+}
+```
+
+### Example: Chat with Memory
+
+```bash
+# First message
+curl -X POST http://localhost:8000/chat \
+  -d '{"message": "What is phi?", "session_id": "user-123"}'
+
+# Follow-up (uses context)
+curl -X POST http://localhost:8000/chat \
+  -d '{"message": "How does it relate to E8?", "session_id": "user-123"}'
+```
+
+### Example: Compare Sources
+
+```bash
+curl -X POST http://localhost:8000/compare \
+  -d '{
+    "source1": "facebook/react",
+    "source2": "vuejs/vue",
+    "query": "Compare architectures"
+  }'
+```
 
 ---
 
-## 📖 Full Usage Guide
+## 📄 Document Analysis
 
-### Using the Command Line Runner (`run_rlm.py`)
+### PDF Support
 
-The simplest way to use the system:
-
+Requires PyMuPDF:
 ```bash
-# Default query about golden ratio and E8
-python run_rlm.py
-
-# Custom queries
-python run_rlm.py "Explain quantum error correction"
-
-# NEW: Load query from file (for long/complex queries)
-python run_rlm.py --file my_query.txt
-
-# NEW: Set recursion depth (default: 4)
-python run_rlm.py --depth 2 "Quick analysis"
-
-# NEW: Read from stdin
-echo "What is phi?" | python run_rlm.py --stdin
+pip install PyMuPDF
 ```
-
-**Example Output:**
-```
-======================================================================
-PHI-ENHANCED RLM WITH OPEN ROUTER (z-ai/glm-4.7)
-======================================================================
-
-Initializing Open Router backend...
-✓ Backend ready with model: z-ai/glm-4.7
-
-Initializing PHI-Enhanced RLM...
-✓ RLM ready with 8 context chunks
-✓ Budget allocation: {0: 635, 1: 577, 2: 541, 3: 524, 4: 492, 5: 476, 6: 446, 7: 405}
-
-Query: Explain how the golden ratio relates to E8 symmetry...
-----------------------------------------------------------------------
-
-Running recursive reasoning (this may take a moment)...
-
-======================================================================
-RESULT
-======================================================================
-
-Answer:
-[Detailed multi-paragraph analysis...]
-
-Confidence: 0.8000
-Stop Reason: no_subquestions
-Depth Reached: 0
-
-======================================================================
-RECURSION TRACE
-======================================================================
-  Depth 0: conf=0.800, flow=222.00, stop=none, chunks=[0, 5, 4]
-
-======================================================================
-BACKEND STATS
-======================================================================
-  Total API calls: 4
-  Total tokens used: 2418
-  Model: z-ai/glm-4.7
-
-✓ Complete!
-```
-
-### Using the Python API
-
-For integration into your own projects:
 
 ```python
-from openrouter_backend import OpenRouterBackend
+from extractors import extract_pdf_content
+
+result = extract_pdf_content("paper.pdf")
+print(f"Title: {result.title}")
+print(f"Pages: {result.metadata['page_count']}")
+print(f"Text: {result.text[:1000]}")
+```
+
+CLI:
+```bash
+python chat.py
+> /pdf research_paper.pdf
+```
+
+### Word Document Support
+
+Requires python-docx:
+```bash
+pip install python-docx
+```
+
+```python
+from extractors import extract_docx_content
+
+result = extract_docx_content("report.docx")
+print(result.text)
+```
+
+CLI:
+```bash
+> /doc quarterly_report.docx
+```
+
+---
+
+## 🌐 Better Web Extraction
+
+Uses trafilatura for article-quality extraction:
+
+```bash
+pip install trafilatura
+```
+
+```python
+from extractors import extract_web_content
+
+html = "<html>..."
+result = extract_web_content(html, url="https://example.com")
+print(f"Title: {result.title}")
+print(f"Clean text: {result.text}")
+```
+
+---
+
+## 💾 SQLite Embedding Cache
+
+Embeddings are now cached in SQLite for persistence:
+
+```python
+from cache import SQLiteEmbeddingCache
+
+cache = SQLiteEmbeddingCache()
+
+# Cache survives restarts!
+cache.set("hello world", "model-v1", embedding_vector)
+cached = cache.get("hello world", "model-v1")  # Fast retrieval
+
+# View stats
+stats = cache.get_stats()
+print(f"Hits: {stats.hits}, Misses: {stats.misses}")
+print(f"Entries: {stats.entry_count}")
+```
+
+Cache location: `~/.cache/phi_rlm/embeddings.db`
+
+---
+
+## ⚡ Parallel Processing
+
+Process subquestions concurrently:
+
+```python
 from phi_enhanced_rlm import PhiEnhancedRLM
 
-# Initialize the LLM backend
-backend = OpenRouterBackend()
+rlm = PhiEnhancedRLM(backend, context_chunks)
+rlm.enable_parallel(True)  # Enable parallel processing
 
-# Define your knowledge base (context chunks)
-context_chunks = [
-    "The golden ratio φ = 1.618 appears throughout mathematics and nature.",
-    "E8 is the largest exceptional Lie group with 248 dimensions.",
-    "Recursive reasoning decomposes complex queries into sub-tasks.",
-    "Your domain-specific knowledge here...",
-]
-
-# Initialize the RLM
-rlm = PhiEnhancedRLM(
-    base_llm_callable=backend,
-    context_chunks=context_chunks,
-    total_budget_tokens=4096,
-    trace_file="rlm_trace.jsonl"
-)
-
-# Run recursive reasoning
-result = rlm.recursive_solve(
-    query="Your question here",
-    max_depth=4  # Maximum recursion depth
-)
-
-# Access results
-print(f"Answer: {result.value}")
-print(f"Confidence: {result.confidence:.4f}")
-print(f"Metadata: {result.metadata}")
+result = rlm.recursive_solve("Complex query", max_depth=3)
+# Subquestions processed in parallel!
 ```
 
-### Customizing the Backend
-
+Async version:
 ```python
-from openrouter_backend import OpenRouterBackend, OpenRouterConfig
+import asyncio
 
-# Option 1: Use environment variables (recommended)
-backend = OpenRouterBackend()  # Reads from .env
+async def analyze():
+    result = await rlm.recursive_solve_async("Query", max_depth=3)
+    return result
 
-# Option 2: Explicit configuration
-config = OpenRouterConfig(
-    api_key="sk-or-v1-your-key",
-    model="z-ai/glm-4.7",       # or "openai/gpt-4-turbo"
-    base_url="https://openrouter.ai/api/v1",
-    timeout=120,
-    max_retries=3
-)
-backend = OpenRouterBackend(config)
-
-# Option 3: Factory function with specific model
-from openrouter_backend import create_backend
-backend = create_backend(model="anthropic/claude-3.5-sonnet")
+result = asyncio.run(analyze())
 ```
-
-### Processing the Results
-
-```python
-result = rlm.recursive_solve(query, max_depth=4)
-
-# The result object contains:
-result.value       # The answer string
-result.confidence  # Float 0.0-1.0
-result.metadata    # Dict with additional info:
-#   - depth: Final recursion depth reached
-#   - path: Tuple of recursion path indices
-#   - stop_reason: Why recursion stopped
-#   - selected_ids: Which context chunks were used
-#   - n_subquestions: Number of subquestions processed
-```
-
-### Reading the Trace File
-
-The system logs every recursion step to `rlm_trace.jsonl`:
-
-```python
-import json
-
-with open("rlm_trace.jsonl", "r") as f:
-    for line in f:
-        entry = json.loads(line)
-        print(f"Depth {entry['depth']}: "
-              f"conf={entry['confidence']:.3f}, "
-              f"flow={entry['info_flow']:.2f}, "
-              f"stop={entry['stop_reason']}")
-```
-
-**Trace fields:**
-- `depth`: Current recursion level (0 = root)
-- `query`: The query being processed
-- `selected_ids`: Indices of context chunks used
-- `logdet_selected`: φ-Gram log-determinant (diversity measure)
-- `collision_full`: Whether full context has duplicate embeddings
-- `collision_selected`: Whether selected chunks have collisions
-- `confidence`: Model's confidence score (0.0-1.0)
-- `info_flow`: New information units added
-- `stop_reason`: Why processing stopped at this node
 
 ---
 
-## ⚙️ Configuration Options
+## 📊 Confidence Visualization
 
-### Environment Variables (`.env`)
+See the reasoning tree:
+
+```python
+rlm = PhiEnhancedRLM(backend, context_chunks)
+result = rlm.recursive_solve("Query")
+
+# Print tree
+rlm.print_reasoning_tree()
+```
+
+Output:
+```
+============================================================
+REASONING TREE
+============================================================
+Total nodes: 5
+Max depth: 2
+Avg confidence: 78.5%
+------------------------------------------------------------
+🟢 D0: What is the golden ratio?...
+   Conf: 85.0% | Info: 150.0 | Chunks: [0, 3, 5]
+  🟡 D1: Define mathematical constant phi...
+     Conf: 75.0% | Info: 45.0 | Chunks: [1, 2]
+     └─ Stopped: momentum
+  🟢 D1: Applications in nature...
+     Conf: 80.0% | Info: 38.0 | Chunks: [4, 6]
+     └─ Stopped: spectral
+============================================================
+```
+
+Using rich library:
+```python
+from progress import visualize_confidence_tree
+
+with open("rlm_trace.jsonl") as f:
+    trace = [json.loads(line) for line in f]
+
+visualize_confidence_tree(trace)
+```
+
+---
+
+## 🎨 Rich Progress Display
+
+Beautiful progress bars with ETA:
+
+```python
+from progress import RichProgressManager
+
+with RichProgressManager().track_analysis("Query", total_chunks=10) as tracker:
+    for i in range(10):
+        # Process chunk...
+        tracker.update(
+            processed=i+1,
+            depth=i//3,
+            confidence=0.5 + i*0.05
+        )
+```
+
+---
+
+## 🔧 Syntax-Aware Code Chunking
+
+Smart chunking for Python/JavaScript:
+
+```python
+from extractors import chunk_python_code, chunk_code_file
+
+# Chunk Python by functions/classes
+chunks = chunk_python_code(python_source)
+for chunk in chunks:
+    print(f"{chunk['type']}: {chunk['name']}")
+    # function: process_data
+    # class: DataHandler
+
+# Auto-detect language by extension
+chunks = chunk_code_file("app.py")
+```
+
+---
+
+## 🖼️ Multi-Modal Support
+
+Analyze images with vision models:
+
+```python
+from extractors import describe_image, describe_image_url
+
+# Local image
+description = describe_image("diagram.png")
+
+# Image URL
+description = describe_image_url("https://example.com/image.jpg")
+```
+
+CLI:
+```bash
+> /image architecture_diagram.png
+Analyzing image...
+✓ Image described
+
+Image Analysis:
+The diagram shows a microservices architecture with...
+
+Insights:
+This architecture follows best practices for...
+```
+
+---
+
+## 📝 Export Reports
+
+Save analyses as formatted markdown:
 
 ```bash
-# Required
-OPENROUTER_API_KEY=sk-or-v1-your-key-here
-
-# Model Selection (see available models below)
-DEFAULT_MODEL=z-ai/glm-4.7
-
-# Connection Settings
-OPENROUTER_BASE_URL=https://openrouter.ai/api/v1
-OPENROUTER_TIMEOUT=120
-OPENROUTER_MAX_RETRIES=3
+> /export report.md
+✓ Exported to report.md
 ```
 
-### Supported Models
-
-| Model ID | Description | Best For |
-|----------|-------------|----------|
-| `z-ai/glm-4.7` | Z.AI GLM-4.7 with reasoning | Deep analysis, complex reasoning |
-| `openai/gpt-4-turbo` | GPT-4 Turbo | High quality, balanced |
-| `openai/gpt-3.5-turbo` | GPT-3.5 Turbo | Fast, cost-effective |
-| `anthropic/claude-3.5-sonnet` | Claude 3.5 Sonnet | Nuanced analysis |
-| `google/gemini-pro` | Gemini Pro | Broad knowledge |
-
-Full list: https://openrouter.ai/models
-
-### RLM Parameters
-
-```python
-rlm = PhiEnhancedRLM(
-    base_llm_callable=backend,      # LLM backend function
-    context_chunks=context_chunks,  # Your knowledge base
-    embeddings=None,                # Pre-computed embeddings (optional)
-    total_budget_tokens=4096,       # Total token budget
-    trace_file="rlm_trace.jsonl"    # Trace log path
-)
-
-result = rlm.recursive_solve(
-    query="Your question",
-    depth=0,         # Starting depth (usually 0)
-    path=(),         # Recursion path tracking
-    max_depth=5      # Maximum recursion depth
-)
-```
+Report includes:
+- Query and response
+- Confidence scores
+- Reasoning trace table
+- Session metadata
 
 ---
 
-## 🧠 How It Works
+## 🔄 Comparison Mode
 
-### The Recursive Reasoning Process
+Compare any two sources:
 
-1. **Chunk Selection**: The system selects the most relevant context chunks using:
-   - Semantic similarity to the query
-   - Diversity via φ-Gram greedy Δlogdet selection
+```bash
+> /compare facebook/react vuejs/vue
+Comparing facebook/react vs vuejs/vue...
+Analyzing facebook/react...
+Analyzing vuejs/vue...
 
-2. **LLM Call**: The query and selected context are sent to the LLM, which returns:
-   - An answer
-   - A confidence score
-   - Any subquestions for deeper analysis
+## Comparison: facebook/react vs vuejs/vue
 
-3. **QEC Verification**: Three independent verifier calls check:
-   - Contradictions
-   - Missing steps
-   - Counterexamples
+**Similarities:**
+- Both are component-based UI frameworks
+- Virtual DOM implementation
+- Large ecosystem and community
 
-4. **Recursion Decision**: The system decides whether to recurse based on:
-   - φ-momentum early stopping (confidence convergence)
-   - Spectral flow saturation (information flow)
-   - Depth limit
-   - Subquestion availability
-
-5. **Aggregation**: Results from subquestions are combined using torsion-corrected aggregation.
-
-### Budget Allocation
-
-Token budget is distributed across recursion depths using E8 Casimir degrees:
-
-```
-Depth 0: 635 tokens (15.5%)
-Depth 1: 577 tokens (14.1%)
-Depth 2: 541 tokens (13.2%)
-Depth 3: 524 tokens (12.8%)
-Depth 4: 492 tokens (12.0%)
-Depth 5: 476 tokens (11.6%)
-Depth 6: 446 tokens (10.9%)
-Depth 7: 405 tokens (9.9%)
+**Differences:**
+- React uses JSX, Vue uses templates
+- Vue has built-in state management
+- React has more enterprise adoption
 ```
 
 ---
@@ -406,90 +461,133 @@ Depth 7: 405 tokens (9.9%)
 ## 📁 Project Structure
 
 ```
-phi-enhanced-rlm/
-├── README.md                            # This documentation
-├── LICENSE                              # MIT License
-├── .gitignore                           # Git ignore rules
-├── .env.template                        # API key template
-├── .env                                 # Your API config (not in repo)
+RLM/
+├── README.md                    # This file
+├── requirements.txt             # Dependencies
+├── .env.template               # API key template
 │
-├── chat.py                             # Interactive chat interface (NEW!)
-├── repo_analyzer.py                    # GitHub/URL/local analyzer (NEW!)
-├── run_rlm.py                          # Command-line runner with file input
-├── openrouter_backend.py               # Open Router API backend
-├── phi_enhanced_rlm.py                 # Core RLM orchestrator
-├── phi_separation_novel_mathematics.py # Mathematics library
-├── validate_rlm.py                     # System validation script
+├── chat.py                     # Interactive chat v2.0
+├── api.py                      # FastAPI REST server
+├── phi_enhanced_rlm.py         # Core RLM with parallel processing
+├── openrouter_backend.py       # LLM backend
+├── embeddings.py               # Embeddings with SQLite cache
+├── cache.py                    # SQLite embedding cache
+├── extractors.py               # PDF/DOCX/web extractors
+├── progress.py                 # Rich progress & visualization
+├── repo_analyzer.py            # GitHub/local analyzer
+├── phi_separation_novel_mathematics.py
 │
-├── rlm_trace.jsonl                     # Execution trace (generated)
-├── chat_trace.jsonl                    # Chat trace (generated)
-└── analyzer_trace.jsonl                # Analyzer trace (generated)
+├── run_rlm.py                  # CLI runner
+├── validate_rlm.py             # System validation
+└── test_upgrades.py            # Test suite
 ```
 
 ---
 
-## 🌟 Overview
+## 🔬 Python API
 
-This framework implements a complete recursive reasoning system that combines:
-- **φ-Gram Chunk Selection** with greedy Δlogdet optimization
-- **Casimir Flow Budget Allocation** based on E8 geometry
-- **φ-Momentum Early Stopping** for efficient convergence
-- **Spectral Flow Saturation Detection** for information-theoretic stopping criteria
-- **Golden Ratio Quantum Error Correction (QEC)** verification
-- **Torsion-Corrected Aggregation** using E8 structure constants
-- **Dependency Cohomology Tracking** for semantic relationships
+### Basic Usage
 
-## 📐 Mathematical Foundations
+```python
+from openrouter_backend import OpenRouterBackend
+from phi_enhanced_rlm import PhiEnhancedRLM
 
-### The φ-Separation Framework
+# Initialize
+backend = OpenRouterBackend()
+rlm = PhiEnhancedRLM(
+    base_llm_callable=backend,
+    context_chunks=["chunk1", "chunk2"],
+    total_budget_tokens=4096
+)
 
-The core innovation is the **φ-Separation principle**: encoding pairwise relationships using the golden ratio kernel:
+# Enable features
+rlm.enable_parallel(True)
 
+# Analyze
+result = rlm.recursive_solve("Your question", max_depth=3)
+
+print(f"Answer: {result.value}")
+print(f"Confidence: {result.confidence:.1%}")
+print(f"Stop reason: {result.metadata['stop_reason']}")
+
+# View reasoning tree
+rlm.print_reasoning_tree()
+```
+
+### Async Usage
+
+```python
+import asyncio
+
+async def main():
+    result = await rlm.recursive_solve_async("Query", max_depth=3)
+    return result
+
+result = asyncio.run(main())
+```
+
+### With Progress Tracking
+
+```python
+from progress import get_progress_manager
+
+pm = get_progress_manager()
+
+with pm.track_analysis("Query", total_chunks=len(chunks)) as tracker:
+    result = rlm.recursive_solve("Query")
+    tracker.update(confidence=result.confidence)
+```
+
+---
+
+## 📊 Architecture
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    PHI-Enhanced RLM v2.0                    │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│   ┌─────────┐    ┌─────────┐    ┌─────────┐               │
+│   │  Chat   │    │   API   │    │   CLI   │               │
+│   │  v2.0   │    │ FastAPI │    │ Runner  │               │
+│   └────┬────┘    └────┬────┘    └────┬────┘               │
+│        │              │              │                     │
+│        └──────────────┼──────────────┘                     │
+│                       ▼                                     │
+│   ┌─────────────────────────────────────────────────────┐  │
+│   │              PhiEnhancedRLM Core                    │  │
+│   │  • φ-Gram Chunk Selection                          │  │
+│   │  • Parallel Subquestion Processing                 │  │
+│   │  • Confidence Tree Tracking                        │  │
+│   │  • QEC Verification                                │  │
+│   └─────────────────────────────────────────────────────┘  │
+│                       │                                     │
+│        ┌──────────────┼──────────────┐                     │
+│        ▼              ▼              ▼                     │
+│   ┌─────────┐   ┌──────────┐   ┌──────────┐              │
+│   │Embedder │   │ LLM      │   │Extractors│              │
+│   │+SQLite  │   │ Backend  │   │PDF/DOCX  │              │
+│   │ Cache   │   │OpenRouter│   │Web/Image │              │
+│   └─────────┘   └──────────┘   └──────────┘              │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 🧮 Mathematical Foundations
+
+### φ-Separation Kernel
 ```
 K(x, y) = φ^(-||x - y||/δ)
 ```
 
-Where:
-- **φ = (1 + √5)/2 ≈ 1.618** is the golden ratio
-- **δ** is the characteristic scale (mean spacing)
-- The kernel has **optimal information-theoretic properties**
-
-### Key Mathematical Concepts
-
-| Concept | Description | Application |
-|---------|-------------|-------------|
-| **φ-Gram Matrix** | `M_ij = φ^(-\|γᵢ - γⱼ\|/δ)` | Collision detection, diversity selection |
-| **E8 Casimir Degrees** | `[2, 8, 12, 14, 18, 20, 24, 30]` | Budget allocation across recursion depths |
-| **Coxeter Number** | `h = 30` | Normalization constant for E8 geometry |
-| **Torsion Coefficient** | `ε = 28/248` | E8-derived correction factor |
-| **φ-Momentum** | `m_{t+1} = φ⁻¹·m_t + (1-φ⁻¹)·signal` | Early stopping criterion |
-
-### The E8 Connection
-
-The exceptional Lie group **E8** provides the geometric backbone:
-- **248 dimensions** encode the full search space
-- **240 roots** (kissing number) bound the spectral norm
-- **Casimir hierarchy** defines the multi-scale budget allocation
-- **Torsion subgroup** (order 28) provides stability corrections
-
----
-
-## 🧮 Key Equations
-
-### φ-Gram Determinant (Product Formula)
+### E8 Casimir Budget Allocation
 ```
-det(M_N) = ∏_{k=1}^{N-1} (1 - φ^{-2Δ_k/δ})
-```
-
-### Casimir Budget Allocation
-```
-w_k = φ^{-C_k/30}, where C_k ∈ {2, 8, 12, 14, 18, 20, 24, 30}
-budget(depth) = total × w_{depth} / Σw
-```
-
-### φ-Momentum Update
-```
-m_{t+1} = φ^{-1} m_t + (1 - φ^{-1}) g_t
+Depth 0: 635 tokens (15.5%)
+Depth 1: 577 tokens (14.1%)
+...
+Depth 7: 405 tokens (9.9%)
 ```
 
 ### QEC Threshold
@@ -497,279 +595,15 @@ m_{t+1} = φ^{-1} m_t + (1 - φ^{-1}) g_t
 p_φ = (1 - φ^{-1})/2 ≈ 0.191
 ```
 
-### Torsion Correction
-```
-ε = 28/248 ≈ 0.1129
-result = answer + ε × torsion_term
-```
-
 ---
-
-## 🔬 Running the Demonstrations
-
-### Full RLM with Open Router
-```bash
-python run_rlm.py "Your question here"
-```
-
-### Mock LLM Demonstration (no API needed)
-```bash
-python phi_enhanced_rlm.py
-```
-
-### Mathematics Library Demonstrations
-```bash
-python phi_separation_novel_mathematics.py
-```
-
----
-
-## 🎯 Applications
-
-- **AI/ML Reasoning**: Enhanced recursive reasoning with provable stopping criteria
-- **Number Theory**: Collision detection for L-function zeros
-- **Cryptography**: Lattice problem hardness estimation
-- **Quantum Computing**: Error-corrected stabilizer codes
-- **Optimization**: Multi-scale gradient methods
-- **Physics**: E8-based unification predictions
-
----
-
-## 💎 THE VALUE THIS SYSTEM PROVIDES
-
-### Why Use PHI-Enhanced RLM Instead of Regular LLM Calls?
-
-This system provides **five key advantages** that you cannot get from standard LLM API calls:
-
----
-
-### 1. 📊 Calibrated Confidence Scores
-
-**The Problem with Regular LLMs:**
-When you call GPT-4 or Claude directly, you get an answer but **no indication of how reliable it is**. The model might be 99% confident or 30% confident—you have no way to know.
-
-**How PHI-Enhanced RLM Solves This:**
-- Runs **3 independent QEC verification checks** on every answer
-- Checks for contradictions, missing logical steps, and counterexamples
-- Uses **majority voting** to produce a calibrated confidence score (0.0-1.0)
-- Confidence is based on the **golden ratio threshold** `p_φ ≈ 0.191`
-
-**Example Output:**
-```
-Answer: "The golden ratio appears in E8's root system..."
-Confidence: 0.8500  ← You know this answer is reliable!
-```
-
-**Use Case:** When confidence < 0.6, you might want to:
-- Request human review
-- Ask follow-up clarifying questions
-- Use a different model
-
----
-
-### 2. 🎯 Mathematically Optimal Context Selection
-
-**The Problem with Regular LLMs:**
-When you have a large knowledge base and limited context window, you typically:
-- Randomly select chunks (poor relevance)
-- Select top-k similar chunks (redundant information)
-- Use basic keyword matching (misses semantic connections)
-
-**How PHI-Enhanced RLM Solves This:**
-Uses the **φ-Gram greedy Δlogdet algorithm** to select chunks that are:
-
-1. **Highly Relevant** to the query (semantic similarity)
-2. **Maximally Diverse** (no redundant information)
-3. **Information-Dense** (optimizes bits per token)
-
-**The Math:**
-```
-K(x, y) = φ^(-||x - y||/δ)
-
-Selection maximizes: log det(M_selected)
-This ensures selected chunks span the information space optimally.
-```
-
-**Concrete Benefit:**
-- Regular top-3 selection might give you chunks about: `golden ratio`, `golden ratio properties`, `golden ratio in nature` (redundant!)
-- φ-Gram selection gives you: `golden ratio`, `E8 symmetry`, `recursive reasoning` (diverse + relevant!)
-
-**Measured Improvement:** 15-25% more information per token vs. naive selection
-
----
-
-### 3. ✅ Verified Answers with Hallucination Detection
-
-**The Problem with Regular LLMs:**
-LLMs can confidently state incorrect information (hallucinations). Without verification, you might:
-- Trust wrong answers
-- Build systems on false premises
-- Make costly mistakes
-
-**How PHI-Enhanced RLM Solves This:**
-Runs **Golden Ratio Quantum Error Correction (QEC)** with 3 verification passes:
-
-| Check | What It Detects | Example |
-|-------|-----------------|---------|
-| **Contradiction** | Logical inconsistencies | "X is true" vs "X implies Y is false" |
-| **Completeness** | Missing logical steps | Answer jumps from A to C without B |
-| **Counterexample** | Edge cases that break the answer | "What about when N=0?" |
-
-**How It Works:**
-```python
-# Three independent verifier calls
-v1 = check_contradiction(answer, context)    # "Does this contradict the context?"
-v2 = check_completeness(answer, question)    # "Are there missing steps?"
-v3 = check_counterexample(answer, domain)    # "Can you find a counterexample?"
-
-# Majority voting
-verified_confidence = majority_vote([v1, v2, v3])
-```
-
-**Measured Improvement:** Catches ~70% of obvious hallucinations
-
----
-
-### 4. 📜 Full Audit Trail in Trace Logs
-
-**The Problem with Regular LLMs:**
-When something goes wrong, you have no visibility into:
-- Why the model gave that answer
-- What context it used
-- How it processed the query
-
-**How PHI-Enhanced RLM Solves This:**
-Every single step is logged to `rlm_trace.jsonl`:
-
-```json
-{
-  "depth": 0,
-  "query": "Explain golden ratio and E8 symmetry",
-  "selected_ids": [0, 5, 4],
-  "logdet_selected": -1.0681,
-  "collision_full": false,
-  "collision_selected": false,
-  "confidence": 0.85,
-  "info_flow": 222.0,
-  "stop_reason": "none"
-}
-```
-
-**What You Can Audit:**
-- `selected_ids`: Exactly which knowledge chunks were used
-- `logdet_selected`: Diversity measure (higher = more diverse selection)
-- `collision_*`: Whether duplicate embeddings were detected
-- `confidence`: Model's confidence at each depth
-- `info_flow`: How much new information was added
-- `stop_reason`: Why processing stopped (depth/momentum/spectral/no_subquestions)
-
-**Use Cases:**
-- **Debugging:** "Why did it give a wrong answer?" → Check selected_ids
-- **Compliance:** "Show me how this decision was made" → Provide trace log
-- **Optimization:** "Where is the bottleneck?" → Analyze info_flow patterns
-
----
-
-### 5. 💰 20-40% Cost Savings via Smart Processing
-
-**The Problem with Naive Recursion:**
-If you recursively call an LLM for every subquestion:
-- You waste tokens on trivial questions
-- You recurse too deep on already-answered questions
-- You pay for unnecessary API calls
-
-**How PHI-Enhanced RLM Solves This:**
-
-#### A. E8 Casimir Budget Allocation
-Instead of uniform token distribution, uses E8 Casimir degrees to allocate more tokens to important depths:
-
-```
-Budget Distribution:
-Depth 0: 635 tokens (15.5%) ← Root query gets most resources
-Depth 1: 577 tokens (14.1%)
-Depth 2: 541 tokens (13.2%)
-...
-Depth 7: 405 tokens (9.9%)  ← Deep subquestions get fewer
-```
-
-**Savings:** ~20% fewer tokens vs. uniform allocation
-
-#### B. φ-Momentum Early Stopping
-Tracks confidence over time using golden ratio momentum:
-```
-m_{t+1} = φ^(-1) × m_t + (1 - φ^(-1)) × current_confidence
-```
-
-When confidence variance falls below threshold, **stops processing early**.
-
-**Savings:** ~30% fewer API calls on high-confidence queries
-
-#### C. Spectral Flow Saturation
-Tracks `info_flow` (new information units per step). When info_flow drops below E8-modulated threshold, **stops recursion**.
-
-**Savings:** Prevents "spinning wheels" on exhausted topics
-
-**Total Measured Savings:** 20-40% cost reduction vs. naive recursive LLM
-
----
-
-### 🔍 Validation: How to Verify the System Works
-
-Run the validation script to confirm everything is working:
-
-```bash
-python validate_rlm.py
-```
-
-**What It Checks:**
-1. ✓ NumPy/SciPy imports and slogdet function
-2. ✓ OpenAI client availability
-3. ✓ Environment configuration (API key, model)
-4. ✓ OpenRouter backend initialization
-5. ✓ PHI constant (1.618034) and E8 Casimir degrees
-6. ✓ API connectivity (live test call)
-
-**Expected Output:**
-```
-Passed: 6/6
-  ✓ numpy_scipy
-  ✓ openai
-  ✓ env_config
-  ✓ backend
-  ✓ rlm_core
-  ✓ api_connectivity
-```
-
----
-
-### 📈 Summary: Regular LLM vs PHI-Enhanced RLM
-
-| Feature | Regular LLM | PHI-Enhanced RLM |
-|---------|-------------|------------------|
-| Confidence Scores | ❌ None | ✅ Calibrated 0.0-1.0 |
-| Context Selection | ❌ Random/Top-k | ✅ φ-Gram optimal |
-| Hallucination Check | ❌ None | ✅ 3-pass QEC verification |
-| Audit Trail | ❌ None | ✅ Full trace log |
-| Cost Efficiency | ❌ Fixed cost | ✅ 20-40% savings |
-| Recursive Reasoning | ❌ Single call | ✅ Depth-controlled recursion |
-| Budget Control | ❌ None | ✅ E8 Casimir allocation |
-
----
-
-## 📚 References
-
-Mathematical concepts derived from:
-- E8 Lie group theory and exceptional geometry  
-- Golden ratio (φ) properties and information theory
-- Recursive Language Model architectures
 
 ## 🤝 Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+Contributions welcome! Please submit a Pull Request.
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+MIT License - see LICENSE file.
 
 ---
 

@@ -77,15 +77,31 @@ class EmbeddingConfig:
 # =============================================================================
 
 class EmbeddingCache:
-    """Simple file-based embedding cache."""
+    """
+    Embedding cache with SQLite backend for persistence.
+    Falls back to in-memory cache if SQLite unavailable.
+    """
     
-    def __init__(self, cache_dir: Optional[str] = None):
+    def __init__(self, cache_dir: Optional[str] = None, use_sqlite: bool = True):
+        self._memory_cache: dict = {}
+        self._sqlite_cache = None
+        
+        if use_sqlite:
+            try:
+                from cache import SQLiteEmbeddingCache
+                self._sqlite_cache = SQLiteEmbeddingCache(
+                    db_path=str(Path(cache_dir) / "embeddings.db") if cache_dir else None
+                )
+                logger.info("Using SQLite embedding cache")
+            except Exception as e:
+                logger.warning(f"SQLite cache unavailable, using memory cache: {e}")
+        
+        # Fallback file cache dir
         if cache_dir:
             self.cache_dir = Path(cache_dir)
         else:
             self.cache_dir = Path.home() / ".cache" / "phi_rlm_embeddings"
         self.cache_dir.mkdir(parents=True, exist_ok=True)
-        self._memory_cache: dict = {}
     
     def _hash_text(self, text: str, model: str) -> str:
         """Generate cache key from text and model."""
@@ -94,18 +110,26 @@ class EmbeddingCache:
     
     def get(self, text: str, model: str) -> Optional[np.ndarray]:
         """Get cached embedding if exists."""
-        key = self._hash_text(text, model)
+        # Try SQLite cache first
+        if self._sqlite_cache:
+            result = self._sqlite_cache.get(text, model)
+            if result is not None:
+                return result
         
-        # Check memory cache first
+        # Fall back to memory cache
+        key = self._hash_text(text, model)
         if key in self._memory_cache:
             return self._memory_cache[key]
         
-        # Check file cache
+        # Try file cache (legacy)
         cache_file = self.cache_dir / f"{key}.npy"
         if cache_file.exists():
             try:
                 embedding = np.load(cache_file)
                 self._memory_cache[key] = embedding
+                # Migrate to SQLite
+                if self._sqlite_cache:
+                    self._sqlite_cache.set(text, model, embedding)
                 return embedding
             except Exception as e:
                 logger.warning(f"Failed to load cached embedding: {e}")
@@ -114,18 +138,21 @@ class EmbeddingCache:
     
     def set(self, text: str, model: str, embedding: np.ndarray):
         """Cache an embedding."""
+        # Save to SQLite if available
+        if self._sqlite_cache:
+            self._sqlite_cache.set(text, model, embedding)
+        
+        # Also keep in memory for fast access
         key = self._hash_text(text, model)
         self._memory_cache[key] = embedding
-        
-        # Save to file
-        cache_file = self.cache_dir / f"{key}.npy"
-        try:
-            np.save(cache_file, embedding)
-        except Exception as e:
-            logger.warning(f"Failed to cache embedding: {e}")
     
     def get_batch(self, texts: List[str], model: str) -> tuple[List[Optional[np.ndarray]], List[int]]:
         """Get cached embeddings, return (results, missing_indices)."""
+        # Use SQLite batch if available
+        if self._sqlite_cache:
+            return self._sqlite_cache.get_batch(texts, model)
+        
+        # Fall back to individual gets
         results = []
         missing = []
         
@@ -136,6 +163,22 @@ class EmbeddingCache:
                 missing.append(i)
         
         return results, missing
+    
+    def get_stats(self) -> dict:
+        """Get cache statistics."""
+        if self._sqlite_cache:
+            stats = self._sqlite_cache.get_stats()
+            return {
+                "hits": stats.hits,
+                "misses": stats.misses,
+                "entries": stats.entry_count,
+                "size_bytes": stats.total_size_bytes,
+                "backend": "sqlite"
+            }
+        return {
+            "entries": len(self._memory_cache),
+            "backend": "memory"
+        }
 
 
 # =============================================================================

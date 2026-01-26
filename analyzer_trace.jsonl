@@ -1,0 +1,1 @@
+{"depth": 0, "query": "Summarize this article", "selected_ids": [0, 1], "logdet_selected": -0.4812, "collision_full": false, "collision_selected": false, "confidence": 0.8, "info_flow": 68.0, "stop_reason": "none", "timestamp": 1769409048.354799}
