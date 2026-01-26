@@ -1,11 +1,16 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 import sys as _sys
-import io as _io
+import os as _os
 # Fix Windows console encoding
 if _sys.platform == 'win32':
-    _sys.stdout = _io.TextIOWrapper(_sys.stdout.buffer, encoding='utf-8', errors='replace')
-    _sys.stderr = _io.TextIOWrapper(_sys.stderr.buffer, encoding='utf-8', errors='replace')
+    _os.environ.setdefault('PYTHONIOENCODING', 'utf-8')
+    if hasattr(_sys.stdout, 'reconfigure'):
+        try:
+            _sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+            _sys.stderr.reconfigure(encoding='utf-8', errors='replace')
+        except Exception:
+            pass
 
 """
 PHI-ENHANCED RECURSIVE LANGUAGE MODEL (RLM) FRAMEWORK

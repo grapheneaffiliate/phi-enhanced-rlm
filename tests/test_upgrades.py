@@ -1,11 +1,23 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 import sys
-import io
-# Fix Windows console encoding
+import os
+from pathlib import Path
+
+# Fix Windows console encoding via environment
 if sys.platform == 'win32':
-    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
-    sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
+    os.environ.setdefault('PYTHONIOENCODING', 'utf-8')
+    # Reconfigure stdout/stderr if possible (Python 3.7+)
+    if hasattr(sys.stdout, 'reconfigure'):
+        try:
+            sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+            sys.stderr.reconfigure(encoding='utf-8', errors='replace')
+        except Exception:
+            pass
+
+# Add parent directory to path for imports
+sys.path.insert(0, str(Path(__file__).parent.parent))
+sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 """
 PHI-ENHANCED RLM v2.0 UPGRADE TESTS
@@ -13,15 +25,13 @@ PHI-ENHANCED RLM v2.0 UPGRADE TESTS
 Verify all new features work correctly.
 
 Run:
-    python test_upgrades.py
+    python tests/test_upgrades.py
 """
 
 import os
-import sys
 import json
 import tempfile
 import time
-from pathlib import Path
 
 # Test results tracking
 results = {"passed": 0, "failed": 0, "skipped": 0}

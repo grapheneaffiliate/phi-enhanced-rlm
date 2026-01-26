@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 """
 PHI-ENHANCED RLM REST API
 =========================
@@ -12,7 +13,7 @@ Endpoints:
     GET /history - Query history
     
 Run:
-    uvicorn api:app --reload --port 8000
+    uvicorn api.server:app --reload --port 8000
     
 Docs:
     http://localhost:8000/docs (Swagger)
@@ -21,6 +22,21 @@ Docs:
 
 import os
 import sys
+from pathlib import Path
+
+# Fix Windows console encoding
+if sys.platform == 'win32':
+    os.environ.setdefault('PYTHONIOENCODING', 'utf-8')
+    if hasattr(sys.stdout, 'reconfigure'):
+        try:
+            sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+            sys.stderr.reconfigure(encoding='utf-8', errors='replace')
+        except Exception:
+            pass
+
+# Add parent directory to path for imports
+sys.path.insert(0, str(Path(__file__).parent.parent))
+sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 import json
 import asyncio
 import time
