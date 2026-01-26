@@ -23,6 +23,9 @@ from typing import List, Dict, Any, Optional, Tuple, Union, Callable
 from dataclasses import dataclass, field
 from pathlib import Path
 import warnings
+import logging
+
+logger = logging.getLogger(__name__)
 
 # Import from the provided mathematics library
 from phi_separation_novel_mathematics import (
@@ -30,6 +33,14 @@ from phi_separation_novel_mathematics import (
     PhiGramMatrix, SpectralFlow, PhiRenormalizationGroup, 
     PhiGramCohomology, PhiLattice, TorsionCorrectedOperator
 )
+
+# Import real embeddings (with fallback to mock)
+try:
+    from embeddings import get_embedder, CachedEmbedder, EmbeddingConfig
+    REAL_EMBEDDINGS_AVAILABLE = True
+except ImportError:
+    REAL_EMBEDDINGS_AVAILABLE = False
+    logger.warning("embeddings module not found, using mock embeddings")
 
 # =============================================================================
 # DATA STRUCTURES
@@ -81,12 +92,55 @@ def cosine_similarity(a: np.ndarray, b: np.ndarray) -> float:
     return float(np.dot(a, b) / (norm_a * norm_b))
 
 def mock_llm_embedding(text: str, dim: int = 64) -> np.ndarray:
-    """Robust mock embedding using cryptographic hash."""
+    """Robust mock embedding using cryptographic hash (fallback only)."""
     h = hashlib.blake2b(text.encode("utf-8"), digest_size=8).digest()
     seed = int.from_bytes(h, "little")
     rng = np.random.default_rng(seed)
     v = rng.standard_normal(dim)
     return v / (np.linalg.norm(v) + 1e-12)
+
+
+# Global embedder instance (lazy-initialized)
+_global_embedder: Optional['CachedEmbedder'] = None
+
+def get_global_embedder() -> Optional['CachedEmbedder']:
+    """Get or create the global embedder instance."""
+    global _global_embedder
+    if _global_embedder is None and REAL_EMBEDDINGS_AVAILABLE:
+        try:
+            _global_embedder = get_embedder()
+            logger.info(f"Initialized embedder: {_global_embedder.provider.__class__.__name__}")
+        except Exception as e:
+            logger.warning(f"Failed to initialize embedder: {e}")
+    return _global_embedder
+
+
+def get_embedding(text: str, embedder: Optional['CachedEmbedder'] = None) -> np.ndarray:
+    """Get embedding for text using real embeddings if available, else mock."""
+    if embedder is None:
+        embedder = get_global_embedder()
+    
+    if embedder is not None:
+        try:
+            return embedder.embed_single(text)
+        except Exception as e:
+            logger.warning(f"Embedding failed, falling back to mock: {e}")
+    
+    return mock_llm_embedding(text)
+
+
+def get_embeddings_batch(texts: List[str], embedder: Optional['CachedEmbedder'] = None) -> np.ndarray:
+    """Get embeddings for multiple texts."""
+    if embedder is None:
+        embedder = get_global_embedder()
+    
+    if embedder is not None:
+        try:
+            return embedder.embed(texts)
+        except Exception as e:
+            logger.warning(f"Batch embedding failed, falling back to mock: {e}")
+    
+    return np.array([mock_llm_embedding(text) for text in texts])
 
 def simple_tokenize(text: str) -> List[str]:
     """Simple whitespace tokenizer for info tracking."""
@@ -195,12 +249,15 @@ class MockLLMBackend:
 class PhiEnhancedRLM:
     """
     Full Recursive Language Model orchestrator with φ-Separation Mathematics.
+    
+    Now with real embeddings support for better chunk selection!
     """
     
     def __init__(self, base_llm_callable: Callable, context_chunks: List[str], 
                  embeddings: Optional[np.ndarray] = None,
                  total_budget_tokens: int = 4096,
-                 trace_file: str = "rlm_trace.jsonl"):
+                 trace_file: str = "rlm_trace.jsonl",
+                 embedder: Optional['CachedEmbedder'] = None):
         """
         Args:
             base_llm_callable: Function (prompt, max_tokens) -> JSON string
@@ -208,15 +265,21 @@ class PhiEnhancedRLM:
             embeddings: Pre-computed embeddings (optional)
             total_budget_tokens: Total token budget for recursion
             trace_file: Path to trace log file
+            embedder: Optional embedder instance (uses global if not provided)
         """
         self.llm = base_llm_callable
         self.context_chunks_text = context_chunks
         self.total_budget = total_budget_tokens
         self.trace_file = Path(trace_file)
         
-        # Generate embeddings if not provided
+        # Store embedder for query embedding
+        self.embedder = embedder or get_global_embedder()
+        
+        # Generate embeddings if not provided (using REAL embeddings now!)
         if embeddings is None:
-            embeddings = np.array([mock_llm_embedding(text) for text in context_chunks])
+            logger.info(f"Generating embeddings for {len(context_chunks)} chunks...")
+            embeddings = get_embeddings_batch(context_chunks, self.embedder)
+            logger.info(f"Embeddings shape: {embeddings.shape}")
         
         self.full_embeddings = embeddings
         
@@ -249,7 +312,7 @@ class PhiEnhancedRLM:
         """
         Query-conditioned selection: first filter by relevance, then maximize diversity.
         
-        1. Embed the query
+        1. Embed the query (using REAL embeddings!)
         2. Score all chunks by relevance (cosine similarity to query)
         3. Take top-K most relevant chunks as candidate pool
         4. Apply greedy Δlogdet selection on this pool for diversity
@@ -263,8 +326,11 @@ class PhiEnhancedRLM:
         if len(self.chunks) <= max_chunks:
             return self.chunks
         
-        # Step 1: Embed the query
-        query_embedding = mock_llm_embedding(query) if query else np.zeros_like(self.chunks[0].embedding)
+        # Step 1: Embed the query using real embeddings
+        if query:
+            query_embedding = get_embedding(query, self.embedder)
+        else:
+            query_embedding = np.zeros_like(self.chunks[0].embedding)
         
         # Step 2: Score all chunks by relevance to query
         relevance_scores = []
