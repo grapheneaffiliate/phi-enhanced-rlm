@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "phi-enhanced-rlm"
-version = "2.0.0"
+version = "2.1.0"
 description = "Recursive Language Model enhanced with φ-Separation Mathematics"
 readme = "README.md"
 license = {text = "MIT"}

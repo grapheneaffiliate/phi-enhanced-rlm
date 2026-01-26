@@ -240,6 +240,75 @@ Cache location: `~/.cache/phi_rlm/embeddings.db`
 
 ---
 
+## 🗄️ Vector Store Pipeline (Large-Scale Data)
+
+For analyzing large datasets (thousands of documents), use the Vector Store + RLM pipeline:
+
+```bash
+pip install chromadb sentence-transformers
+```
+
+### Ingest Documents
+
+```python
+from src.vector_store import VectorStore, RLMPipeline
+
+# Create a collection
+store = VectorStore("my_research")
+
+# Add files
+store.add_file("paper.pdf")
+store.add_directory("./documents", recursive=True)
+
+print(f"Indexed {store.count()} chunks")
+```
+
+### Query + Analyze
+
+```python
+# Simple retrieval
+results = store.query("What are the main findings?", top_k=10)
+for r in results:
+    print(f"{r.score:.2f}: {r.text[:100]}...")
+
+# Full pipeline: retrieve → RLM analysis
+pipeline = RLMPipeline("my_research")
+result = pipeline.analyze(
+    "What are the contradictions between these papers?",
+    top_k=20,
+    max_depth=3
+)
+print(f"Answer: {result['answer']}")
+print(f"Confidence: {result['confidence']:.1%}")
+```
+
+### CLI Usage
+
+```bash
+# Ingest a directory
+python src/vector_store.py ingest ./documents -c research --recursive
+
+# Query
+python src/vector_store.py query "main findings" -c research -k 10
+
+# Full RLM analysis
+python src/vector_store.py analyze "What are the key themes?" -c research
+```
+
+### Architecture
+
+```
+┌─────────────┐     ┌─────────────┐     ┌─────────────┐
+│  Documents  │────▶│  ChromaDB   │────▶│    RLM      │
+│  PDF/DOCX/  │     │  Vector DB  │     │  Recursive  │
+│  Code/Web   │     │  (persist)  │     │  Analysis   │
+└─────────────┘     └─────────────┘     └─────────────┘
+```
+
+Data location: `~/.cache/phi_rlm/vectordb/`
+
+---
+
 ## ⚡ Parallel Processing
 
 ```python

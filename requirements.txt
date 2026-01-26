@@ -10,6 +10,9 @@ python-dotenv>=1.0.0
 # Embeddings
 sentence-transformers>=2.2.0  # Local embeddings (free, ~400MB)
 
+# Vector Database
+chromadb>=0.4.0               # Embedded vector store for large-scale retrieval
+
 # Web extraction (better than regex)
 trafilatura>=1.6.0            # Readability-style content extraction
 # readability-lxml>=0.8.1     # Alternative: Mozilla's readability

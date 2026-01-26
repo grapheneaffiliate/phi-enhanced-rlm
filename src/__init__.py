@@ -17,7 +17,14 @@ from .extractors import (
 from .progress import RichProgressManager, get_progress_manager
 from .openrouter_backend import OpenRouterBackend
 
-__version__ = "2.0.0"
+# Vector store (optional - requires chromadb)
+try:
+    from .vector_store import VectorStore, RLMPipeline, Document, QueryResult
+    VECTOR_STORE_AVAILABLE = True
+except ImportError:
+    VECTOR_STORE_AVAILABLE = False
+
+__version__ = "2.1.0"
 __all__ = [
     "PhiEnhancedRLM",
     "ContextChunk", 
