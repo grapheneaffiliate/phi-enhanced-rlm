@@ -19,10 +19,40 @@ import argparse
 import tempfile
 import shutil
 import subprocess
+import re
+import html
 from pathlib import Path
 from typing import List, Dict, Any, Optional
 from urllib.parse import urlparse
 import urllib.request
+
+
+def html_to_text(html_content: str) -> str:
+    """Extract readable text from HTML content."""
+    # Remove script and style elements
+    text = re.sub(r'<script[^>]*>.*?</script>', '', html_content, flags=re.DOTALL | re.IGNORECASE)
+    text = re.sub(r'<style[^>]*>.*?</style>', '', text, flags=re.DOTALL | re.IGNORECASE)
+    text = re.sub(r'<head[^>]*>.*?</head>', '', text, flags=re.DOTALL | re.IGNORECASE)
+    text = re.sub(r'<nav[^>]*>.*?</nav>', '', text, flags=re.DOTALL | re.IGNORECASE)
+    text = re.sub(r'<footer[^>]*>.*?</footer>', '', text, flags=re.DOTALL | re.IGNORECASE)
+    
+    # Replace common block elements with newlines
+    text = re.sub(r'<(p|div|h[1-6]|li|tr|br)[^>]*>', '\n', text, flags=re.IGNORECASE)
+    text = re.sub(r'</(p|div|h[1-6]|li|tr)>', '\n', text, flags=re.IGNORECASE)
+    
+    # Remove remaining HTML tags
+    text = re.sub(r'<[^>]+>', '', text)
+    
+    # Decode HTML entities
+    text = html.unescape(text)
+    
+    # Clean up whitespace
+    text = re.sub(r'\n\s*\n', '\n\n', text)
+    text = re.sub(r' +', ' ', text)
+    text = '\n'.join(line.strip() for line in text.split('\n'))
+    text = re.sub(r'\n{3,}', '\n\n', text)
+    
+    return text.strip()
 
 # PHI-Enhanced RLM imports
 from openrouter_backend import OpenRouterBackend
@@ -161,10 +191,18 @@ class URLFetcher(ContentFetcher):
         try:
             req = urllib.request.Request(
                 source,
-                headers={'User-Agent': 'Mozilla/5.0 (PHI-Enhanced-RLM)'}
+                headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'}
             )
             with urllib.request.urlopen(req, timeout=30) as response:
-                content = response.read().decode('utf-8', errors='ignore')
+                raw_content = response.read().decode('utf-8', errors='ignore')
+                
+                # Extract text from HTML
+                content_type = response.headers.get('Content-Type', '')
+                if 'html' in content_type.lower() or raw_content.strip().startswith('<!'):
+                    content = html_to_text(raw_content)
+                    print(f"  [OK] Extracted {len(content)} chars of text from HTML")
+                else:
+                    content = raw_content
                 
                 # Truncate if too large
                 if len(content) > MAX_TOTAL_SIZE:
@@ -266,7 +304,7 @@ class RepoAnalyzer:
             return {"error": "No analyzable content found"}
         
         if self.verbose:
-            print(f"  ✓ Extracted {len(files)} files")
+            print(f"  [OK] Extracted {len(files)} files")
             for name in list(files.keys())[:10]:
                 print(f"    - {name}")
             if len(files) > 10:
@@ -277,7 +315,7 @@ class RepoAnalyzer:
         chunks = self._create_chunks(files)
         
         if self.verbose:
-            print(f"  ✓ Created {len(chunks)} context chunks")
+            print(f"  [OK] Created {len(chunks)} context chunks")
             print()
         
         # Initialize RLM
@@ -323,7 +361,7 @@ class RepoAnalyzer:
     def _get_fetcher(self, source: str) -> ContentFetcher:
         """Get appropriate fetcher for source."""
         if source.startswith("https://github.com/") or \
-           ("/" in source and not source.startswith(("http://", "/", "."))):
+           ("/" in source and not source.startswith(("http://", "https://", "/", "."))):
             return GitHubFetcher()
         elif source.startswith(("http://", "https://")):
             return URLFetcher()
@@ -387,7 +425,7 @@ Examples:
     try:
         backend = OpenRouterBackend()
     except Exception as e:
-        print(f"✗ Failed to initialize backend: {e}")
+        print(f"[FAIL] Failed to initialize backend: {e}")
         print("Make sure .env contains OPENROUTER_API_KEY")
         return 1
     
@@ -397,14 +435,14 @@ Examples:
     try:
         result = analyzer.analyze(args.source, args.query, max_depth=args.depth)
     except Exception as e:
-        print(f"✗ Analysis failed: {e}")
+        print(f"[FAIL] Analysis failed: {e}")
         return 1
     
     # Save output if requested
     if args.output:
         with open(args.output, 'w', encoding='utf-8') as f:
             json.dump(result, f, indent=2)
-        print(f"✓ Output saved to {args.output}")
+        print(f"[OK] Output saved to {args.output}")
     
     # Print for quiet mode
     if args.quiet and "answer" in result:
