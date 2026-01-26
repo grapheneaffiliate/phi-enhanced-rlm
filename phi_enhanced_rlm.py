@@ -828,18 +828,18 @@ Respond in JSON format:
             indent = "  " * node["depth"]
             conf = node["confidence"]
             
-            # Color indicator based on confidence
+            # ASCII indicator based on confidence
             if conf >= 0.8:
-                indicator = "🟢"
+                indicator = "[+]"
             elif conf >= 0.6:
-                indicator = "🟡"
+                indicator = "[~]"
             else:
-                indicator = "🔴"
+                indicator = "[-]"
             
             print(f"{indent}{indicator} D{node['depth']}: {node['query'][:40]}...")
-            print(f"{indent}   Conf: {conf:.1%} | Info: {node['info_flow']:.1f} | Chunks: {node['chunks']}")
+            print(f"{indent}    Conf: {conf:.1%} | Info: {node['info_flow']:.1f} | Chunks: {node['chunks']}")
             if node["stop_reason"] != "none":
-                print(f"{indent}   └─ Stopped: {node['stop_reason']}")
+                print(f"{indent}    `-- Stopped: {node['stop_reason']}")
         
         print("=" * 60)
 

@@ -189,11 +189,11 @@ class SimpleProgressManager:
             if hasattr(self.state, key):
                 setattr(self.state, key, value)
         
-        # Simple progress bar
+        # Simple progress bar (ASCII-safe)
         pct = self.state.processed_chunks / max(self.state.total_chunks, 1)
         bar_len = 30
         filled = int(pct * bar_len)
-        bar = "█" * filled + "░" * (bar_len - filled)
+        bar = "#" * filled + "-" * (bar_len - filled)
         
         sys.stdout.write(f"\r[{bar}] {pct:.0%} D{self.state.current_depth} conf={self.state.confidence:.1%}")
         sys.stdout.flush()
@@ -317,7 +317,7 @@ def visualize_confidence_tree(trace: list, use_rich: bool = True):
         for entry in trace:
             depth = entry.get("depth", 0)
             conf = entry.get("confidence", 0)
-            bar = "█" * int(conf * 20) + "░" * (20 - int(conf * 20))
+            bar = "#" * int(conf * 20) + "-" * (20 - int(conf * 20))
             print(f"D{depth}: [{bar}] {conf:.1%}")
 
 
