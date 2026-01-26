@@ -1,4 +1,4 @@
-# PHI-Enhanced Recursive Language Model (RLM) v2.0
+# PHI-Enhanced Recursive Language Model (RLM) v2.1
 
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.18377963.svg)](https://doi.org/10.5281/zenodo.18377963)
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
@@ -13,6 +13,7 @@ A recursive language model framework enhanced with φ-Separation Mathematics, fe
 - **📄 PDF/DOCX Support** — Analyze documents directly
 - **🌐 Smart Web Extraction** — Trafilatura for clean article extraction
 - **💾 SQLite Embedding Cache** — Persistent cache survives restarts
+- **🗄️ Vector Store** — ChromaDB-backed retrieval for large-scale data analysis
 - **🔌 REST API** — FastAPI with OpenAPI docs
 - **💬 Conversation Memory** — Stateful chat with context
 - **⚡ Parallel Processing** — Process subquestions concurrently
@@ -70,6 +71,7 @@ phi-enhanced-rlm/
 │   ├── phi_separation_novel_mathematics.py  # φ-Math foundations
 │   ├── embeddings.py            # Embedding generation
 │   ├── cache.py                 # SQLite embedding cache
+│   ├── vector_store.py          # ChromaDB vector store for large-scale data
 │   ├── extractors.py            # PDF/DOCX/web extractors
 │   ├── progress.py              # Rich progress display
 │   ├── openrouter_backend.py    # OpenRouter LLM backend
