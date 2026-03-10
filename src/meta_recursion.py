@@ -20,12 +20,12 @@ model truly self-evolving.
 import logging
 import time
 from dataclasses import dataclass, field
-from typing import List, Dict, Optional, Any, Callable
+from typing import List, Dict, Optional, Any
 
 import numpy as np
 
 from phi_separation_novel_mathematics import PHI, PHI_INV, CASIMIR_DEGREES
-from phi_enhanced_rlm import PhiEnhancedRLM, SubCallResult, MockLLMBackend
+from phi_enhanced_rlm import PhiEnhancedRLM, SubCallResult
 
 logger = logging.getLogger(__name__)
 

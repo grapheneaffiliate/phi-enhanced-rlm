@@ -9,7 +9,6 @@ vanilla baselines, measuring accuracy, token usage, and recursion efficiency.
 import json
 import time
 import sys
-import os
 import logging
 from pathlib import Path
 from dataclasses import dataclass, field, asdict
@@ -18,7 +17,6 @@ from typing import List, Dict, Optional, Callable, Any
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 from phi_enhanced_rlm import PhiEnhancedRLM, SubCallResult, MockLLMBackend
-from phi_separation_novel_mathematics import PHI, PHI_INV, CASIMIR_DEGREES
 
 logger = logging.getLogger(__name__)
 
@@ -342,7 +340,7 @@ def print_comparison(summaries: Dict[str, BenchmarkSummary]):
     if vanilla.accuracy > 0 and phi.accuracy > 0:
         phi_efficiency = phi.accuracy / max(phi.avg_tokens, 1)
         vanilla_efficiency = vanilla.accuracy / max(vanilla.avg_tokens, 1)
-        print(f"\nToken Efficiency (accuracy/token):")
+        print("\nToken Efficiency (accuracy/token):")
         print(f"  φ-RLM:   {phi_efficiency:.6f}")
         print(f"  Vanilla: {vanilla_efficiency:.6f}")
         if vanilla_efficiency > 0:

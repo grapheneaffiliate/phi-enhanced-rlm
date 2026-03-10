@@ -15,16 +15,13 @@ Usage:
 
 import json
 import logging
-import sys
 import time
-from pathlib import Path
-from typing import Optional, List, Dict
+from typing import List, Dict
 
-import numpy as np
 
 from evolution import PhiEvolutionEngine, EvolutionState, EvaluationResult
-from phi_enhanced_rlm import PhiEnhancedRLM, MockLLMBackend, SubCallResult
-from phi_separation_novel_mathematics import PHI, PHI_INV
+from phi_enhanced_rlm import PhiEnhancedRLM, MockLLMBackend
+from phi_separation_novel_mathematics import PHI
 
 logger = logging.getLogger(__name__)
 

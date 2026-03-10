@@ -29,7 +29,7 @@ from .meta_recursion import MetaRecursiveRLM, RecursionStrategy
 
 # Vector store (optional - requires chromadb)
 try:
-    from .vector_store import VectorStore, RLMPipeline, Document, QueryResult
+    from .vector_store import VectorStore, RLMPipeline, Document, QueryResult  # noqa: F401
     VECTOR_STORE_AVAILABLE = True
 except ImportError:
     VECTOR_STORE_AVAILABLE = False

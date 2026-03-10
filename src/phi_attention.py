@@ -13,12 +13,11 @@ Key mechanisms:
 4. φ-Chain-of-thought: decomposition follows golden ratio priority levels
 """
 
-import numpy as np
-from typing import List, Optional, Tuple
+from typing import List, Optional
 from dataclasses import dataclass
 
 from phi_separation_novel_mathematics import (
-    PHI, PHI_INV, LOG_PHI, EPSILON, CASIMIR_DEGREES, E8_DIM
+    PHI, PHI_INV, EPSILON, CASIMIR_DEGREES
 )
 
 
@@ -114,7 +113,7 @@ This ensures minority perspectives are not lost in aggregation."""
 
     def _minimize(self, text: str) -> str:
         """Reduce injection to essential instructions."""
-        lines = [l.strip() for l in text.strip().split("\n") if l.strip()]
+        lines = [line.strip() for line in text.strip().split("\n") if line.strip()]
         return "\n".join(lines[:5])
 
     def phi_chain_of_thought(self, query: str, depth: int = 0) -> str:

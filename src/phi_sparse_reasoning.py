@@ -14,10 +14,10 @@ This module handles:
 """
 
 import numpy as np
-from typing import List, Tuple, Optional
+from typing import List, Optional
 from dataclasses import dataclass
 
-from phi_separation_novel_mathematics import PHI, PHI_INV, LOG_PHI
+from phi_separation_novel_mathematics import PHI, PHI_INV
 
 
 @dataclass

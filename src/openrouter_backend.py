@@ -11,7 +11,7 @@ Setup:
 
 Usage:
     from openrouter_backend import OpenRouterBackend
-    
+
     backend = OpenRouterBackend()
     response = backend("Your prompt here", max_tokens=256)
 """
@@ -47,20 +47,20 @@ class OpenRouterConfig:
     base_url: str = "https://openrouter.ai/api/v1"
     timeout: int = 120
     max_retries: int = 3
-    
+
     @classmethod
     def from_env(cls) -> 'OpenRouterConfig':
         """Load configuration from environment variables."""
         if DOTENV_AVAILABLE and load_dotenv is not None:
             load_dotenv()
-        
+
         api_key = os.getenv("OPENROUTER_API_KEY")
         if not api_key:
             raise ValueError(
                 "OPENROUTER_API_KEY not found in environment. "
                 "Please copy .env.template to .env and add your API key."
             )
-        
+
         return cls(
             api_key=api_key,
             model=os.getenv("DEFAULT_MODEL", "z-ai/glm-4.7"),
@@ -73,60 +73,60 @@ class OpenRouterConfig:
 class OpenRouterBackend:
     """
     Open Router LLM Backend for PHI-Enhanced RLM.
-    
+
     Compatible with the PhiEnhancedRLM base_llm_callable interface.
     Returns JSON-formatted responses for structured parsing.
     """
-    
+
     def __init__(self, config: Optional[OpenRouterConfig] = None):
         """
         Initialize the Open Router backend.
-        
+
         Args:
             config: OpenRouterConfig instance. If None, loads from environment.
         """
         if not OPENAI_AVAILABLE:
             raise ImportError("openai package required. Install with: pip install openai")
-        
+
         self.config = config or OpenRouterConfig.from_env()
-        
+
         self.client = OpenAI(
             base_url=self.config.base_url,
             api_key=self.config.api_key,
             timeout=self.config.timeout,
         )
-        
+
         self.call_count = 0
         self.total_tokens = 0
-    
+
     def __call__(self, prompt: str, max_tokens: int = 2048) -> str:
         """
         Call the LLM with the given prompt.
-        
+
         Args:
             prompt: The input prompt
             max_tokens: Maximum tokens to generate
-            
+
         Returns:
             JSON-formatted string with answer, confidence, and subquestions
         """
         return self.generate(prompt, max_tokens)
-    
-    def generate(self, prompt: str, max_tokens: int = 2048, 
+
+    def generate(self, prompt: str, max_tokens: int = 2048,
                  temperature: float = 0.7) -> str:
         """
         Generate a response from the LLM.
-        
+
         Args:
             prompt: The input prompt
             max_tokens: Maximum tokens to generate
             temperature: Sampling temperature
-            
+
         Returns:
             JSON-formatted string compatible with PhiEnhancedRLM
         """
         # Build the system prompt for structured output
-        system_prompt = """You are a recursive reasoning assistant. 
+        system_prompt = """You are a recursive reasoning assistant.
 For each query, provide:
 1. A clear, concise answer
 2. Your confidence level (0.0-1.0)
@@ -141,7 +141,7 @@ Always respond in valid JSON format:
 
 If no subquestions are needed, use an empty array: "subquestions": []
 """
-        
+
         for attempt in range(self.config.max_retries):
             try:
                 response = self.client.chat.completions.create(
@@ -157,22 +157,22 @@ If no subquestions are needed, use an empty array: "subquestions": []
                         "X-Title": "PHI-Enhanced RLM",
                     }
                 )
-                
+
                 self.call_count += 1
-                
+
                 # Track token usage if available
                 if hasattr(response, 'usage') and response.usage:
                     self.total_tokens += response.usage.total_tokens
-                
+
                 message = response.choices[0].message
                 content = message.content or ""
-                
+
                 # Some models (like z-ai/glm-4.7) put content in reasoning field
                 if not content.strip():
                     reasoning = getattr(message, 'reasoning', None)
                     if reasoning:
                         content = str(reasoning)
-                
+
                 # Try to parse as JSON, wrap if needed
                 if not content.strip():
                     return json.dumps({
@@ -180,9 +180,9 @@ If no subquestions are needed, use an empty array: "subquestions": []
                         "confidence": 0.5,
                         "subquestions": []
                     })
-                
+
                 return self._ensure_json_format(content)
-                
+
             except Exception as e:
                 if attempt < self.config.max_retries - 1:
                     wait_time = 2 ** attempt  # Exponential backoff
@@ -195,14 +195,14 @@ If no subquestions are needed, use an empty array: "subquestions": []
                         "confidence": 0.1,
                         "subquestions": []
                     })
-    
+
     def _ensure_json_format(self, content: str) -> str:
         """
         Ensure the response is valid JSON in the expected format.
-        
+
         Args:
             content: Raw LLM response
-            
+
         Returns:
             Valid JSON string
         """
@@ -216,7 +216,7 @@ If no subquestions are needed, use an empty array: "subquestions": []
                 return json.dumps(parsed)
         except json.JSONDecodeError:
             pass
-        
+
         # Try to extract JSON from markdown code block
         if "```json" in content:
             try:
@@ -228,14 +228,14 @@ If no subquestions are needed, use an empty array: "subquestions": []
                     return json.dumps(parsed)
             except (IndexError, json.JSONDecodeError):
                 pass
-        
+
         # Fallback: wrap raw content in structured format
         return json.dumps({
             "answer": content,
             "confidence": 0.7,  # Default confidence for unstructured responses
             "subquestions": []
         })
-    
+
     def get_stats(self) -> Dict[str, Any]:
         """Get usage statistics."""
         return {
@@ -245,15 +245,15 @@ If no subquestions are needed, use an empty array: "subquestions": []
         }
 
 
-def create_backend(api_key: Optional[str] = None, 
+def create_backend(api_key: Optional[str] = None,
                    model: str = "z-ai/glm-4.7") -> OpenRouterBackend:
     """
     Factory function to create an OpenRouter backend.
-    
+
     Args:
         api_key: Optional API key (uses env if not provided)
         model: Model to use (default: z-ai/glm-4.7)
-        
+
     Returns:
         Configured OpenRouterBackend instance
     """
@@ -262,7 +262,7 @@ def create_backend(api_key: Optional[str] = None,
     else:
         config = OpenRouterConfig.from_env()
         config.model = model
-    
+
     return OpenRouterBackend(config)
 
 
@@ -276,12 +276,12 @@ def demo():
     print("OPEN ROUTER BACKEND DEMONSTRATION")
     print("=" * 60)
     print()
-    
+
     try:
         backend = OpenRouterBackend()
         print(f"✓ Backend initialized with model: {backend.config.model}")
         print()
-        
+
         # Test query
         test_prompt = """Query: What is the significance of the golden ratio in mathematics?
 
@@ -293,10 +293,10 @@ Please provide a structured analysis."""
 
         print("Sending test query...")
         response = backend(test_prompt, max_tokens=500)
-        
+
         print("\nResponse:")
         print("-" * 40)
-        
+
         try:
             parsed = json.loads(response)
             print(f"Answer: {parsed.get('answer', 'N/A')[:200]}...")
@@ -304,10 +304,10 @@ Please provide a structured analysis."""
             print(f"Subquestions: {parsed.get('subquestions', [])}")
         except json.JSONDecodeError:
             print(response[:500])
-        
+
         print()
         print(f"Stats: {backend.get_stats()}")
-        
+
     except ValueError as e:
         print(f"Configuration error: {e}")
         print("\nTo use this backend:")
