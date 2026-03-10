@@ -273,7 +273,10 @@ class PhiEnhancedRLM:
                  total_budget_tokens: int = 4096,
                  trace_file: str = "rlm_trace.jsonl",
                  embedder: Optional['CachedEmbedder'] = None,
-                 evolution_state: Optional[Any] = None):
+                 evolution_state: Optional[Any] = None,
+                 memory_path: str = "phi_rlm_memory.json",
+                 skills_dir: str = ".claude/skills",
+                 enable_tools: Optional[Dict[str, bool]] = None):
         """
         Args:
             base_llm_callable: Function (prompt, max_tokens) -> JSON string
@@ -283,12 +286,18 @@ class PhiEnhancedRLM:
             trace_file: Path to trace log file
             embedder: Optional embedder instance (uses global if not provided)
             evolution_state: Optional EvolutionState with learned parameters
+            memory_path: Path to phi-spiral memory database
+            skills_dir: Path to skills directory
+            enable_tools: Tool flags, e.g. {"code_exec": True, "web": True, "shell": True}
         """
         self.llm = base_llm_callable
         self.context_chunks_text = context_chunks
         self.total_budget = total_budget_tokens
         self.trace_file = Path(trace_file)
         self.evolution_state = evolution_state
+        self._memory_path = memory_path
+        self._skills_dir = skills_dir
+        self._enable_tools = enable_tools or {}
 
         # Store embedder for query embedding
         self.embedder = embedder or get_global_embedder()
@@ -376,7 +385,7 @@ class PhiEnhancedRLM:
         if self._spiral_memory is None:
             try:
                 from .phi_memory import PhiSpiralMemory
-                self._spiral_memory = PhiSpiralMemory(db_path="phi_rlm_memory.json")
+                self._spiral_memory = PhiSpiralMemory(db_path=self._memory_path)
             except ImportError:
                 self._spiral_memory = False
         return self._spiral_memory if self._spiral_memory is not False else None
@@ -396,7 +405,7 @@ class PhiEnhancedRLM:
         if self._skill_loader is None:
             try:
                 from .skill_loader import SkillLoader
-                self._skill_loader = SkillLoader()
+                self._skill_loader = SkillLoader(skills_dir=self._skills_dir)
             except ImportError:
                 self._skill_loader = False
         return self._skill_loader if self._skill_loader is not False else None
@@ -406,7 +415,11 @@ class PhiEnhancedRLM:
         if self._tool_registry is None:
             try:
                 from .tool_executor import ToolRegistry
-                self._tool_registry = ToolRegistry()
+                self._tool_registry = ToolRegistry(
+                    enable_code_exec=self._enable_tools.get("code_exec", False),
+                    enable_web=self._enable_tools.get("web", False),
+                    enable_shell=self._enable_tools.get("shell", False),
+                )
             except ImportError:
                 self._tool_registry = False
         return self._tool_registry if self._tool_registry is not False else None
@@ -1290,6 +1303,71 @@ Respond in JSON format:
                 "aggregated_confidence": aggregated.confidence
             }
         )
+
+    def adversarial_challenge(self, query: str, result: 'SubCallResult') -> 'SubCallResult':
+        """Run PhiCritic as an independent adversarial pass on a completed result.
+
+        Unlike QEC (which runs during recursion), this challenges the final answer
+        after recursive_solve completes. If the critic finds significant flaws,
+        confidence is downgraded.
+
+        Args:
+            query: The original query.
+            result: The SubCallResult from recursive_solve.
+
+        Returns:
+            Updated SubCallResult with critic metadata and adjusted confidence.
+        """
+        try:
+            from .phi_critic import PhiCritic
+            critic = PhiCritic(self, critique_depth=2)
+            critique = critic.critique(query, str(result.value))
+            penalty = critique.flaws_found * 0.05
+            adjusted_conf = max(0.1, result.confidence - penalty)
+            return SubCallResult(
+                value=result.value,
+                confidence=adjusted_conf,
+                metadata={
+                    **result.metadata,
+                    "adversarial_critique": critique.critique_text,
+                    "adversarial_score": critique.quality_score,
+                    "flaws_found": critique.flaws_found,
+                    "confidence_before_challenge": result.confidence,
+                }
+            )
+        except Exception as e:
+            logger.warning(f"Adversarial challenge failed: {e}")
+            return result
+
+    def workflow_solve(self, query: str, max_depth: int = 7,
+                       confidence_threshold: float = 0.5) -> dict:
+        """Convenience method to run the full superpowers workflow pipeline.
+
+        Wraps SuperpowersOrchestrator so callers don't need to import it separately.
+
+        Args:
+            query: The query to solve.
+            max_depth: Maximum recursion depth (default 7 for full E8 hierarchy).
+            confidence_threshold: Minimum confidence to pass workflow gates.
+
+        Returns:
+            Dict with 'result', 'workflow_trace', and 'summary' keys.
+        """
+        try:
+            from .workflow_orchestrator import SuperpowersOrchestrator
+            orchestrator = SuperpowersOrchestrator(
+                self, confidence_threshold=confidence_threshold
+            )
+            result = orchestrator.orchestrated_solve(query, max_depth=max_depth)
+            return {
+                "result": result,
+                "workflow_trace": orchestrator.workflow_trace,
+                "summary": orchestrator.get_workflow_summary(),
+            }
+        except ImportError:
+            logger.warning("workflow_orchestrator not available, falling back to recursive_solve")
+            result = self.recursive_solve(query, max_depth=max_depth)
+            return {"result": result, "workflow_trace": [], "summary": ""}
 
 # =============================================================================
 # DEMONSTRATION

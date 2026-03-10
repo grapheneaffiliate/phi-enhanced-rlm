@@ -25,6 +25,12 @@ SUPERPOWERS_KEYWORDS = {
     "verification-before-completion": ["done", "complete", "verify", "check", "confirm", "ship"],
     "dispatching-parallel-agents": ["parallel", "concurrent", "multiple", "independent"],
     "requesting-code-review": ["review", "quality", "check", "approve"],
+    "receiving-code-review": ["feedback", "review", "comments", "address", "revise", "respond"],
+    "executing-plans": ["run", "execute", "step", "progress", "follow", "iterate"],
+    "finishing-a-development-branch": ["merge", "branch", "finish", "pr", "pull request", "ship"],
+    "using-git-worktrees": ["worktree", "git", "branch", "isolate", "parallel", "checkout"],
+    "using-superpowers": ["superpowers", "workflow", "pipeline", "orchestrate", "phases"],
+    "writing-skills": ["skill", "template", "write", "author", "markdown", "instructions"],
 }
 
 
