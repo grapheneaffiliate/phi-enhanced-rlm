@@ -45,13 +45,13 @@ logger = logging.getLogger(__name__)
 _executor = concurrent.futures.ThreadPoolExecutor(max_workers=4)
 
 # Import from the provided mathematics library
-from phi_separation_novel_mathematics import (  # noqa: E402
+from .phi_separation_novel_mathematics import (  # noqa: E402
     PHI, PHI_INV, EPSILON, CASIMIR_DEGREES, COXETER_NUMBER
 )
 
 # Import real embeddings (with fallback to mock)
 try:
-    from embeddings import get_embedder, CachedEmbedder, EmbeddingConfig  # noqa: F401
+    from .embeddings import get_embedder, CachedEmbedder, EmbeddingConfig  # noqa: F401
     REAL_EMBEDDINGS_AVAILABLE = True
 except ImportError:
     REAL_EMBEDDINGS_AVAILABLE = False
@@ -324,6 +324,7 @@ class PhiEnhancedRLM:
         # Initialize φ-attention injector (lazy import to avoid circular deps)
         self._phi_attention = None
         self._phi_sparse = None
+        self._spiral_memory = None
 
         # Clear trace file
         self.trace_file.write_text("")
@@ -341,7 +342,7 @@ class PhiEnhancedRLM:
         """Lazy-load φ-attention injector."""
         if self._phi_attention is None:
             try:
-                from phi_attention import PhiAttentionInjector
+                from .phi_attention import PhiAttentionInjector
                 self._phi_attention = PhiAttentionInjector()
             except ImportError:
                 self._phi_attention = False
@@ -354,11 +355,21 @@ class PhiEnhancedRLM:
                 pruning_ratio = 0.618
                 if self.evolution_state and hasattr(self.evolution_state, 'pruning_ratio'):
                     pruning_ratio = self.evolution_state.pruning_ratio
-                from phi_sparse_reasoning import PhiSparseReasoner
+                from .phi_sparse_reasoning import PhiSparseReasoner
                 self._phi_sparse = PhiSparseReasoner(pruning_ratio=pruning_ratio)
             except ImportError:
                 self._phi_sparse = False
         return self._phi_sparse if self._phi_sparse is not False else None
+
+    def _get_spiral_memory(self):
+        """Lazy-load φ-spiral memory."""
+        if self._spiral_memory is None:
+            try:
+                from .phi_memory import PhiSpiralMemory
+                self._spiral_memory = PhiSpiralMemory(db_path="phi_rlm_memory.json")
+            except ImportError:
+                self._spiral_memory = False
+        return self._spiral_memory if self._spiral_memory is not False else None
 
     # =========================================================================
     # STEP 2: Query-Conditioned Chunk Selection (Relevance → Diversity)
@@ -390,10 +401,22 @@ class PhiEnhancedRLM:
         else:
             query_embedding = np.zeros_like(self.chunks[0].embedding)
 
-        # Step 2: Score all chunks by relevance to query
+        # Step 2: Score all chunks by relevance using φ-kernel retrieval
+        try:
+            from .phi_retrieval import phi_retrieval_score
+            use_phi_retrieval = True
+        except ImportError:
+            use_phi_retrieval = False
+
         relevance_scores = []
         for i, chunk in enumerate(self.chunks):
-            score = cosine_similarity(query_embedding, chunk.embedding)
+            if use_phi_retrieval:
+                score = phi_retrieval_score(
+                    query_embedding, chunk.embedding,
+                    delta=getattr(self.phi_gram, 'delta', 1.0)
+                )
+            else:
+                score = cosine_similarity(query_embedding, chunk.embedding)
             relevance_scores.append((i, score))
 
         # Sort by relevance (highest first)
@@ -666,6 +689,14 @@ class PhiEnhancedRLM:
             "stop_reason": stop_reason,
             "timestamp": time.time()
         }
+        # Add dependency structure metrics if available
+        if len(selected_ids) > 1:
+            try:
+                dep = self.analyze_dependency_structure(selected_ids)
+                entry["dep_components"] = dep["connected_components"]
+                entry["dep_spectral_gap"] = round(dep["spectral_gap"], 4)
+            except Exception:
+                pass
         with open(self.trace_file, "a") as f:
             f.write(json.dumps(entry) + "\n")
 
@@ -914,6 +945,28 @@ Respond in JSON format:
         selected_ids = [c.id for c in selected]
         selected_text = "\n".join([c.text for c in selected])
 
+        # Dependency structure analysis — re-select if chunks too correlated
+        if len(selected_ids) > 1:
+            dep_analysis = self.analyze_dependency_structure(
+                selected_ids, similarity_threshold=0.7
+            )
+            if dep_analysis["spectral_gap"] < 0.1:
+                # Chunks are too correlated, re-select with stricter threshold
+                selected = self.select_chunks_for_subcall(
+                    query=query, max_chunks=3, sim_threshold=0.85
+                )
+                selected_ids = [c.id for c in selected]
+                selected_text = "\n".join([c.text for c in selected])
+
+        # Retrieve relevant memories from φ-spiral memory
+        spiral_mem = self._get_spiral_memory()
+        if spiral_mem and spiral_mem.memories:
+            query_emb = get_embedding(query, self.embedder)
+            memories = spiral_mem.retrieve(query_emb, k=2)
+            if memories:
+                memory_text = "\n".join([m.text for m in memories])
+                selected_text = f"{selected_text}\n\n[Prior Knowledge]:\n{memory_text}"
+
         # Compute logdet of selection
         sub_gram = self.phi_gram.submatrix(selected_ids)
         logdet_selected = sub_gram.log_determinant
@@ -983,6 +1036,17 @@ Respond in JSON format:
 
         # If stopping, return current answer
         if stop_reason != "none":
+            # Store in φ-spiral memory (only at root depth)
+            if depth == 0 and spiral_mem:
+                try:
+                    result_emb = get_embedding(answer[:500], self.embedder)
+                    spiral_mem.store(
+                        text=f"Q: {query[:200]}\nA: {answer[:300]}",
+                        embedding=result_emb,
+                        importance=confidence,
+                    )
+                except Exception:
+                    pass
             return SubCallResult(
                 value=answer,
                 confidence=confidence,
@@ -1037,6 +1101,18 @@ Respond in JSON format:
         # Combine with current answer
         final_answer = f"{answer}\n\nSub-analysis: {aggregated.value}"
         final_conf = (confidence + aggregated.confidence) / 2
+
+        # Store result in φ-spiral memory (only at root depth)
+        if depth == 0 and spiral_mem:
+            try:
+                result_emb = get_embedding(final_answer[:500], self.embedder)
+                spiral_mem.store(
+                    text=f"Q: {query[:200]}\nA: {final_answer[:300]}",
+                    embedding=result_emb,
+                    importance=final_conf,
+                )
+            except Exception:
+                pass  # Memory storage is best-effort
 
         return SubCallResult(
             value=final_answer,

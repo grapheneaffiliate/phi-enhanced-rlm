@@ -21,7 +21,7 @@ from dataclasses import dataclass, field, asdict
 from pathlib import Path
 from typing import Dict, List, Optional, Any
 
-from phi_separation_novel_mathematics import (
+from .phi_separation_novel_mathematics import (
     PHI_INV
 )
 

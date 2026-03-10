@@ -17,7 +17,6 @@ if sys.platform == 'win32':
 
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
-sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 """
 PHI-ENHANCED RLM v2.0 UPGRADE TESTS
@@ -65,7 +64,7 @@ def _test_decorator(name):
 
 @_test_decorator("SQLite Embedding Cache")
 def test_sqlite_cache():
-    from cache import SQLiteEmbeddingCache
+    from src.cache import SQLiteEmbeddingCache
     import numpy as np
 
     # Use temp file (will be cleaned up manually)
@@ -117,7 +116,7 @@ def test_sqlite_cache():
 
 @_test_decorator("Web Content Extraction")
 def test_web_extraction():
-    from extractors import extract_web_content
+    from src.extractors import extract_web_content
 
     html = """
     <html>
@@ -146,7 +145,7 @@ def test_web_extraction():
 
 @_test_decorator("PDF Extraction")
 def test_pdf_extraction():
-    from extractors import extract_pdf_content
+    from src.extractors import extract_pdf_content
 
     # Check if we have a test PDF
     test_pdf = Path(__file__).parent / "2512.24601v1.pdf"
@@ -165,7 +164,7 @@ def test_pdf_extraction():
 
 @_test_decorator("Code Chunking")
 def test_code_chunking():
-    from extractors import chunk_python_code
+    from src.extractors import chunk_python_code
 
     python_code = '''
 def hello():
@@ -201,7 +200,7 @@ class Greeter:
 
 @_test_decorator("Progress Manager")
 def test_progress():
-    from progress import get_progress_manager, SimpleProgressManager
+    from src.progress import get_progress_manager, SimpleProgressManager
 
     pm = get_progress_manager(use_rich=False)  # Use simple for testing
     assert isinstance(pm, SimpleProgressManager)
@@ -220,7 +219,7 @@ def test_progress():
 
 @_test_decorator("Confidence Visualization")
 def test_confidence_viz():
-    from progress import visualize_confidence_tree
+    from src.progress import visualize_confidence_tree
 
     trace = [
         {"depth": 0, "confidence": 0.75, "info_flow": 150, "selected_ids": [0, 3], "stop_reason": "none"},
@@ -238,7 +237,7 @@ def test_confidence_viz():
 
 @_test_decorator("Embeddings with SQLite Cache")
 def test_embeddings_sqlite():
-    from embeddings import EmbeddingCache
+    from src.embeddings import EmbeddingCache
     import numpy as np
 
     tmpdir = tempfile.mkdtemp()
@@ -279,7 +278,7 @@ def test_embeddings_sqlite():
 
 @_test_decorator("RLM Parallel Processing Setup")
 def test_rlm_parallel():
-    from phi_enhanced_rlm import PhiEnhancedRLM, MockLLMBackend
+    from src.phi_enhanced_rlm import PhiEnhancedRLM, MockLLMBackend
 
     mock_llm = MockLLMBackend(seed=42)
     chunks = ["Chunk 1", "Chunk 2", "Chunk 3"]
@@ -300,7 +299,7 @@ def test_rlm_parallel():
 
 @_test_decorator("RLM Reasoning Tree")
 def test_rlm_reasoning_tree():
-    from phi_enhanced_rlm import PhiEnhancedRLM, MockLLMBackend
+    from src.phi_enhanced_rlm import PhiEnhancedRLM, MockLLMBackend
     import tempfile
 
     mock_llm = MockLLMBackend(seed=42)
@@ -341,7 +340,7 @@ def test_rlm_reasoning_tree():
 
 @_test_decorator("API Models")
 def test_api_models():
-    from api import (
+    from api import (  # noqa: E402
         AnalyzeRequest, ChatRequest, CompareRequest
     )
 
@@ -390,7 +389,7 @@ def test_api_state():
 
 @_test_decorator("End-to-End Integration")
 def test_integration():
-    from phi_enhanced_rlm import PhiEnhancedRLM, MockLLMBackend
+    from src.phi_enhanced_rlm import PhiEnhancedRLM, MockLLMBackend
     import tempfile
 
     # Setup

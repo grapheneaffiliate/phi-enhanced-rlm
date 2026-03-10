@@ -18,7 +18,7 @@ from .server import (
 
 __all__ = [
     "AnalyzeRequest",
-    "ChatRequest", 
+    "ChatRequest",
     "CompareRequest",
     "AnalyzeResponse",
     "ChatResponse",

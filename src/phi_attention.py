@@ -16,7 +16,7 @@ Key mechanisms:
 from typing import List, Optional
 from dataclasses import dataclass
 
-from phi_separation_novel_mathematics import (
+from .phi_separation_novel_mathematics import (
     PHI, PHI_INV, EPSILON, CASIMIR_DEGREES
 )
 

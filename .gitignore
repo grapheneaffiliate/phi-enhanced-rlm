@@ -90,6 +90,10 @@ Thumbs.db
 *.jsonl
 examples/
 
+# Runtime artifacts
+phi_rlm_memory.json
+sessions/
+
 # Cache
 .cache/
 *.db

@@ -36,25 +36,27 @@ if sys.platform == 'win32':
 
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
-sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 import json
 import asyncio
 import time
 from datetime import datetime
 from pathlib import Path
 from typing import List, Dict, Any, Optional
-from dataclasses import dataclass, field, asdict
+from dataclasses import dataclass, field
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, HTTPException, BackgroundTasks
-from fastapi.responses import StreamingResponse, JSONResponse
+from fastapi import FastAPI, HTTPException
+from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 import uvicorn
 
 # Import RLM components
-from openrouter_backend import OpenRouterBackend
-from phi_enhanced_rlm import PhiEnhancedRLM
+from src.openrouter_backend import OpenRouterBackend
+from src.phi_enhanced_rlm import PhiEnhancedRLM
+from src.meta_recursion import MetaRecursiveRLM
+from src.phi_memory import PhiSpiralMemory
+from src.evolution import PhiEvolutionEngine
 
 # =============================================================================
 # DATA MODELS
@@ -67,7 +69,7 @@ class AnalyzeRequest(BaseModel):
     source: Optional[str] = Field(None, description="GitHub repo, URL, or local path")
     max_depth: int = Field(3, ge=0, le=10, description="Maximum recursion depth")
     stream: bool = Field(False, description="Enable streaming response")
-    
+
     class Config:
         json_schema_extra = {
             "example": {
@@ -84,7 +86,7 @@ class ChatRequest(BaseModel):
     session_id: Optional[str] = Field(None, description="Session ID for conversation memory")
     context: Optional[List[str]] = Field(None, description="Additional context")
     max_depth: int = Field(2, ge=0, le=10, description="Recursion depth")
-    
+
     class Config:
         json_schema_extra = {
             "example": {
@@ -166,8 +168,8 @@ class AppState:
     sessions: Dict[str, List[Dict]] = field(default_factory=dict)
     history: List[Dict] = field(default_factory=list)
     max_history: int = 100
-    
-    def add_to_history(self, query: str, answer: str, confidence: float, 
+
+    def add_to_history(self, query: str, answer: str, confidence: float,
                        session_id: Optional[str] = None):
         """Add entry to history."""
         entry = {
@@ -180,13 +182,13 @@ class AppState:
         self.history.append(entry)
         if len(self.history) > self.max_history:
             self.history = self.history[-self.max_history:]
-    
+
     def get_session(self, session_id: str) -> List[Dict]:
         """Get or create session."""
         if session_id not in self.sessions:
             self.sessions[session_id] = []
         return self.sessions[session_id]
-    
+
     def add_to_session(self, session_id: str, role: str, content: str):
         """Add message to session."""
         session = self.get_session(session_id)
@@ -212,7 +214,7 @@ async def lifespan(app: FastAPI):
     """Initialize resources on startup, cleanup on shutdown."""
     # Startup
     print("Initializing PHI-Enhanced RLM API...")
-    
+
     try:
         state.backend = OpenRouterBackend()
         state.start_time = time.time()
@@ -220,9 +222,9 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         print(f"✗ Backend initialization failed: {e}")
         print("API will start but analysis endpoints will fail.")
-    
+
     yield
-    
+
     # Shutdown
     print("Shutting down...")
 
@@ -248,7 +250,7 @@ Advanced recursive reasoning with φ-Separation Mathematics.
 ### Authentication
 Set `OPENROUTER_API_KEY` in server environment.
     """,
-    version="2.0.0",
+    version="3.0.0",
     lifespan=lifespan,
     docs_url="/docs",
     redoc_url="/redoc",
@@ -285,16 +287,16 @@ def get_default_context() -> List[str]:
 async def stream_analysis(rlm: PhiEnhancedRLM, query: str, max_depth: int):
     """Generator for streaming analysis results."""
     import json
-    
+
     # Yield status updates
     yield f"data: {json.dumps({'status': 'starting', 'query': query})}\n\n"
     await asyncio.sleep(0.1)
-    
+
     yield f"data: {json.dumps({'status': 'analyzing', 'depth': 0})}\n\n"
-    
+
     # Run analysis
     result = rlm.recursive_solve(query, max_depth=max_depth)
-    
+
     # Yield result
     response = {
         "status": "complete",
@@ -307,8 +309,8 @@ async def stream_analysis(rlm: PhiEnhancedRLM, query: str, max_depth: int):
 
 def fetch_source_content(source: str) -> List[str]:
     """Fetch content from a source and return as chunks."""
-    from repo_analyzer import RepoAnalyzer, GitHubFetcher, URLFetcher, LocalFetcher
-    
+    from cli.repo_analyzer import GitHubFetcher, URLFetcher, LocalFetcher
+
     # Determine fetcher type
     if source.startswith("https://github.com/") or \
        ("/" in source and not source.startswith(("http://", "https://", "/", "."))):
@@ -317,13 +319,13 @@ def fetch_source_content(source: str) -> List[str]:
         fetcher = URLFetcher()
     else:
         fetcher = LocalFetcher()
-    
+
     try:
         files = fetcher.fetch(source)
     finally:
         if hasattr(fetcher, 'cleanup'):
             fetcher.cleanup()
-    
+
     # Convert to chunks
     chunks = []
     for filepath, content in files.items():
@@ -331,7 +333,7 @@ def fetch_source_content(source: str) -> List[str]:
         chunks.append(chunk)
         if len(chunks) >= 20:
             break
-    
+
     return chunks
 
 
@@ -364,13 +366,13 @@ async def get_status():
             "entries": stats.entry_count,
             "size_kb": stats.total_size_bytes / 1024
         }
-    except:
+    except Exception:
         pass
-    
+
     return StatusResponse(
         status="healthy" if state.backend else "degraded",
         model=state.backend.config.model if state.backend else "not initialized",
-        version="2.0.0",
+        version="3.0.0",
         uptime_seconds=time.time() - state.start_time if state.start_time else 0,
         total_requests=state.request_count,
         active_sessions=len(state.sessions),
@@ -392,9 +394,9 @@ async def analyze(request: AnalyzeRequest):
     """
     if state.backend is None:
         raise HTTPException(status_code=503, detail="Backend not initialized")
-    
+
     state.request_count += 1
-    
+
     # Get context
     if request.source:
         try:
@@ -405,7 +407,7 @@ async def analyze(request: AnalyzeRequest):
         context = request.context
     else:
         context = get_default_context()
-    
+
     # Handle streaming
     if request.stream:
         rlm = PhiEnhancedRLM(
@@ -418,7 +420,7 @@ async def analyze(request: AnalyzeRequest):
             stream_analysis(rlm, request.query, request.max_depth),
             media_type="text/event-stream"
         )
-    
+
     # Regular analysis
     rlm = PhiEnhancedRLM(
         base_llm_callable=state.backend,
@@ -426,21 +428,21 @@ async def analyze(request: AnalyzeRequest):
         total_budget_tokens=4096,
         trace_file="api_trace.jsonl"
     )
-    
+
     result = rlm.recursive_solve(request.query, max_depth=request.max_depth)
-    
+
     # Read trace
     trace = []
     try:
         with open("api_trace.jsonl", "r") as f:
             for line in f:
                 trace.append(json.loads(line))
-    except:
+    except Exception:
         pass
-    
+
     # Add to history
     state.add_to_history(request.query, result.value, result.confidence)
-    
+
     return AnalyzeResponse(
         answer=result.value,
         confidence=result.confidence,
@@ -462,16 +464,16 @@ async def chat(request: ChatRequest):
     """
     if state.backend is None:
         raise HTTPException(status_code=503, detail="Backend not initialized")
-    
+
     state.request_count += 1
-    
+
     # Get or create session
     session_id = request.session_id or f"session-{int(time.time())}"
     session = state.get_session(session_id)
-    
+
     # Build context with conversation history
     context = get_default_context()
-    
+
     # Add conversation history to context
     if session:
         history_text = "\n".join([
@@ -479,11 +481,11 @@ async def chat(request: ChatRequest):
             for m in session[-6:]  # Last 3 turns
         ])
         context.insert(0, f"Previous conversation:\n{history_text}")
-    
+
     # Add custom context
     if request.context:
         context.extend(request.context)
-    
+
     # Initialize RLM
     rlm = PhiEnhancedRLM(
         base_llm_callable=state.backend,
@@ -491,17 +493,17 @@ async def chat(request: ChatRequest):
         total_budget_tokens=4096,
         trace_file="chat_trace.jsonl"
     )
-    
+
     # Run analysis
     result = rlm.recursive_solve(request.message, max_depth=request.max_depth)
-    
+
     # Update session
     state.add_to_session(session_id, "user", request.message)
     state.add_to_session(session_id, "assistant", result.value)
-    
+
     # Add to history
     state.add_to_history(request.message, result.value, result.confidence, session_id)
-    
+
     return ChatResponse(
         response=result.value,
         confidence=result.confidence,
@@ -520,16 +522,16 @@ async def compare(request: CompareRequest):
     """
     if state.backend is None:
         raise HTTPException(status_code=503, detail="Backend not initialized")
-    
+
     state.request_count += 1
-    
+
     # Fetch both sources
     try:
         chunks1 = fetch_source_content(request.source1)
         chunks2 = fetch_source_content(request.source2)
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Failed to fetch sources: {e}")
-    
+
     # Analyze first source
     rlm1 = PhiEnhancedRLM(
         base_llm_callable=state.backend,
@@ -540,7 +542,7 @@ async def compare(request: CompareRequest):
         request.query or "Summarize the main purpose and features.",
         max_depth=request.max_depth
     )
-    
+
     # Analyze second source
     rlm2 = PhiEnhancedRLM(
         base_llm_callable=state.backend,
@@ -551,19 +553,19 @@ async def compare(request: CompareRequest):
         request.query or "Summarize the main purpose and features.",
         max_depth=request.max_depth
     )
-    
+
     # Generate comparison
     comparison_context = [
         f"Source 1 ({request.source1}):\n{result1.value[:1000]}",
         f"Source 2 ({request.source2}):\n{result2.value[:1000]}",
     ]
-    
+
     rlm_compare = PhiEnhancedRLM(
         base_llm_callable=state.backend,
         context_chunks=comparison_context,
         total_budget_tokens=2048
     )
-    
+
     comparison_query = """Compare these two sources:
 1. What are the main similarities?
 2. What are the key differences?
@@ -580,22 +582,22 @@ DIFFERENCES:
 
 RECOMMENDATION:
 Your recommendation here."""
-    
+
     comparison_result = rlm_compare.recursive_solve(comparison_query, max_depth=1)
-    
+
     # Parse comparison (simple extraction)
     comparison_text = comparison_result.value
     similarities = []
     differences = []
-    
+
     if "SIMILARITIES:" in comparison_text:
         sim_section = comparison_text.split("SIMILARITIES:")[1].split("DIFFERENCES:")[0]
         similarities = [line.strip().lstrip("- ") for line in sim_section.strip().split("\n") if line.strip().startswith("-")]
-    
+
     if "DIFFERENCES:" in comparison_text:
         diff_section = comparison_text.split("DIFFERENCES:")[1].split("RECOMMENDATION:")[0] if "RECOMMENDATION:" in comparison_text else comparison_text.split("DIFFERENCES:")[1]
         differences = [line.strip().lstrip("- ") for line in diff_section.strip().split("\n") if line.strip().startswith("-")]
-    
+
     return CompareResponse(
         source1_summary=result1.value[:500],
         source2_summary=result2.value[:500],
@@ -614,10 +616,10 @@ async def get_history(limit: int = 20, session_id: Optional[str] = None):
     Optionally filter by session_id.
     """
     history = state.history
-    
+
     if session_id:
         history = [h for h in history if h.get("session_id") == session_id]
-    
+
     return [
         HistoryEntry(
             query=h["query"],
@@ -628,6 +630,89 @@ async def get_history(limit: int = 20, session_id: Optional[str] = None):
         )
         for h in history[-limit:]
     ]
+
+
+@app.post("/meta-analyze", tags=["Analysis"])
+async def meta_analyze(request: AnalyzeRequest):
+    """
+    Analyze using MetaRecursiveRLM — auto-selects recursion strategy.
+
+    The meta-layer analyzes query type, selects optimal strategy,
+    and retries with alternative strategies if results are poor.
+    """
+    if state.backend is None:
+        raise HTTPException(status_code=503, detail="Backend not initialized")
+
+    state.request_count += 1
+
+    context = request.context or get_default_context()
+    if request.source:
+        try:
+            context = fetch_source_content(request.source)
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=f"Failed to fetch source: {e}")
+
+    rlm = PhiEnhancedRLM(
+        base_llm_callable=state.backend,
+        context_chunks=context,
+        total_budget_tokens=4096,
+        trace_file="api_trace.jsonl"
+    )
+    meta_rlm = MetaRecursiveRLM(rlm)
+    result = meta_rlm.meta_solve(request.query, max_meta_depth=2)
+
+    state.add_to_history(request.query, result.value, result.confidence)
+
+    return {
+        "answer": result.value,
+        "confidence": result.confidence,
+        "strategy": result.metadata.get("meta_strategy", "unknown"),
+        "query_type": result.metadata.get("meta_query_type", "unknown"),
+        "metadata": result.metadata,
+        "timestamp": datetime.utcnow().isoformat(),
+    }
+
+
+@app.get("/evolution/status", tags=["Evolution"])
+async def evolution_status():
+    """Get current evolution engine status."""
+    try:
+        engine = PhiEvolutionEngine(state_path="evolution_state.json")
+        return engine.get_evolution_summary()
+    except Exception as e:
+        return {"error": str(e), "status": "not_initialized"}
+
+
+@app.get("/memory/spiral", tags=["Memory"])
+async def memory_spiral():
+    """Get φ-spiral memory statistics."""
+    try:
+        memory = PhiSpiralMemory(db_path="phi_rlm_memory.json")
+        return memory.get_stats()
+    except Exception as e:
+        return {"error": str(e), "total": 0}
+
+
+@app.get("/reasoning/tree", tags=["Analysis"])
+async def reasoning_tree():
+    """Get the most recent reasoning tree."""
+    trace = []
+    for trace_file in ["api_trace.jsonl", "chat_trace.jsonl"]:
+        try:
+            with open(trace_file, "r") as f:
+                for line in f:
+                    if line.strip():
+                        trace.append(json.loads(line))
+        except FileNotFoundError:
+            pass
+    if not trace:
+        return {"error": "No trace available", "nodes": []}
+    return {
+        "total_nodes": len(trace),
+        "max_depth": max(e.get("depth", 0) for e in trace),
+        "avg_confidence": sum(e.get("confidence", 0) for e in trace) / len(trace),
+        "nodes": trace,
+    }
 
 
 @app.delete("/session/{session_id}", tags=["Chat"])
@@ -653,7 +738,7 @@ def main():
     print("Docs: http://localhost:8000/docs")
     print("ReDoc: http://localhost:8000/redoc")
     print()
-    
+
     uvicorn.run(
         "api:app",
         host="0.0.0.0",

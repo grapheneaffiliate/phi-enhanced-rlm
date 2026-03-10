@@ -19,9 +19,8 @@ import pytest
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
-sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from phi_enhanced_rlm import PhiEnhancedRLM, MockLLMBackend, SubCallResult
+from src.phi_enhanced_rlm import PhiEnhancedRLM, MockLLMBackend, SubCallResult
 
 
 # Mark all tests in this module as integration tests

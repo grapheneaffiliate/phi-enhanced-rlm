@@ -87,7 +87,7 @@ class EmbeddingCache:
 
         if use_sqlite:
             try:
-                from cache import SQLiteEmbeddingCache
+                from .cache import SQLiteEmbeddingCache
                 self._sqlite_cache = SQLiteEmbeddingCache(
                     db_path=str(Path(cache_dir) / "embeddings.db") if cache_dir else None
                 )

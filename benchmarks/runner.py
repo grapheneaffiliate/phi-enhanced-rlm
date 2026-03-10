@@ -14,9 +14,10 @@ from pathlib import Path
 from dataclasses import dataclass, field, asdict
 from typing import List, Dict, Optional, Callable, Any
 
-sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
+sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from phi_enhanced_rlm import PhiEnhancedRLM, SubCallResult, MockLLMBackend
+from src.phi_enhanced_rlm import PhiEnhancedRLM, SubCallResult, MockLLMBackend
+from src.meta_recursion import MetaRecursiveRLM
 
 logger = logging.getLogger(__name__)
 
@@ -194,7 +195,10 @@ def run_single(model, question: BenchmarkQuestion, max_depth: int = 5) -> Benchm
     """Run a single benchmark question through a model."""
     start = time.time()
 
-    result = model.recursive_solve(question.question, max_depth=max_depth)
+    if hasattr(model, 'meta_solve'):
+        result = model.meta_solve(question.question, max_meta_depth=2)
+    else:
+        result = model.recursive_solve(question.question, max_depth=max_depth)
 
     elapsed = time.time() - start
     depth = result.metadata.get("depth", 0)
@@ -257,8 +261,12 @@ def run_benchmark(dataset_path: str, llm_backend: Optional[Callable] = None,
         total_budget_tokens=4096,
     )
 
+    # Create meta-recursive wrapper
+    meta_rlm = MetaRecursiveRLM(phi_rlm)
+
     phi_results = []
     vanilla_results = []
+    meta_results = []
 
     for i, question in enumerate(questions):
         logger.info(f"Question {i+1}/{len(questions)}: {question.question[:60]}...")
@@ -268,6 +276,9 @@ def run_benchmark(dataset_path: str, llm_backend: Optional[Callable] = None,
 
         vanilla_result = run_single(vanilla_rlm, question, max_depth)
         vanilla_results.append(vanilla_result)
+
+        meta_result = run_single(meta_rlm, question, max_depth)
+        meta_results.append(meta_result)
 
     def summarize(name: str, results: List[BenchmarkResult]) -> BenchmarkSummary:
         correct = sum(1 for r in results if r.correct)
@@ -287,6 +298,7 @@ def run_benchmark(dataset_path: str, llm_backend: Optional[Callable] = None,
     return {
         "phi": summarize("φ-Enhanced RLM", phi_results),
         "vanilla": summarize("Vanilla RLM", vanilla_results),
+        "meta": summarize("Meta-φ-RLM", meta_results),
     }
 
 
@@ -323,28 +335,51 @@ def print_comparison(summaries: Dict[str, BenchmarkSummary]):
     """Print a formatted comparison table."""
     phi = summaries["phi"]
     vanilla = summaries["vanilla"]
+    meta = summaries.get("meta")
 
-    print("\n" + "=" * 70)
-    print("BENCHMARK COMPARISON: φ-Enhanced RLM vs Vanilla RLM")
-    print("=" * 70)
-    print(f"{'Metric':<25} {'φ-RLM':>15} {'Vanilla':>15} {'Δ':>10}")
-    print("-" * 70)
-    print(f"{'Accuracy':<25} {phi.accuracy:>14.1%} {vanilla.accuracy:>14.1%} {phi.accuracy - vanilla.accuracy:>+9.1%}")
-    print(f"{'Avg Tokens':<25} {phi.avg_tokens:>15.0f} {vanilla.avg_tokens:>15.0f} {phi.avg_tokens - vanilla.avg_tokens:>+10.0f}")
-    print(f"{'Avg Depth':<25} {phi.avg_depth:>15.1f} {vanilla.avg_depth:>15.1f} {phi.avg_depth - vanilla.avg_depth:>+10.1f}")
-    print(f"{'Avg Time (s)':<25} {phi.avg_time:>15.2f} {vanilla.avg_time:>15.2f} {phi.avg_time - vanilla.avg_time:>+10.2f}")
-    print(f"{'Avg Confidence':<25} {phi.avg_confidence:>15.3f} {vanilla.avg_confidence:>15.3f} {phi.avg_confidence - vanilla.avg_confidence:>+10.3f}")
-    print("=" * 70)
+    print("\n" + "=" * 85)
+    print("BENCHMARK COMPARISON: φ-RLM vs Vanilla vs Meta-φ-RLM")
+    print("=" * 85)
+    if meta:
+        print(f"{'Metric':<20} {'φ-RLM':>15} {'Vanilla':>15} {'Meta-φ':>15} {'Best':>15}")
+        print("-" * 85)
+        models = [("φ-RLM", phi), ("Vanilla", vanilla), ("Meta-φ", meta)]
+    else:
+        print(f"{'Metric':<20} {'φ-RLM':>15} {'Vanilla':>15} {'Δ':>10}")
+        print("-" * 65)
+        models = [("φ-RLM", phi), ("Vanilla", vanilla)]
+
+    def best_label(vals, names, higher_better=True):
+        idx = vals.index(max(vals)) if higher_better else vals.index(min(vals))
+        return names[idx]
+
+    names = [n for n, _ in models]
+    accs = [m.accuracy for _, m in models]
+    toks = [m.avg_tokens for _, m in models]
+    times = [m.avg_time for _, m in models]
+    confs = [m.avg_confidence for _, m in models]
+
+    if meta:
+        print(f"{'Accuracy':<20} {phi.accuracy:>14.1%} {vanilla.accuracy:>14.1%} {meta.accuracy:>14.1%} {best_label(accs, names):>15}")
+        print(f"{'Avg Tokens':<20} {phi.avg_tokens:>15.0f} {vanilla.avg_tokens:>15.0f} {meta.avg_tokens:>15.0f} {best_label(toks, names, False):>15}")
+        print(f"{'Avg Depth':<20} {phi.avg_depth:>15.1f} {vanilla.avg_depth:>15.1f} {meta.avg_depth:>15.1f}")
+        print(f"{'Avg Time (s)':<20} {phi.avg_time:>15.2f} {vanilla.avg_time:>15.2f} {meta.avg_time:>15.2f} {best_label(times, names, False):>15}")
+        print(f"{'Avg Confidence':<20} {phi.avg_confidence:>15.3f} {vanilla.avg_confidence:>15.3f} {meta.avg_confidence:>15.3f} {best_label(confs, names):>15}")
+    else:
+        print(f"{'Accuracy':<20} {phi.accuracy:>14.1%} {vanilla.accuracy:>14.1%} {phi.accuracy - vanilla.accuracy:>+9.1%}")
+        print(f"{'Avg Tokens':<20} {phi.avg_tokens:>15.0f} {vanilla.avg_tokens:>15.0f} {phi.avg_tokens - vanilla.avg_tokens:>+10.0f}")
+        print(f"{'Avg Depth':<20} {phi.avg_depth:>15.1f} {vanilla.avg_depth:>15.1f} {phi.avg_depth - vanilla.avg_depth:>+10.1f}")
+        print(f"{'Avg Time (s)':<20} {phi.avg_time:>15.2f} {vanilla.avg_time:>15.2f} {phi.avg_time - vanilla.avg_time:>+10.2f}")
+        print(f"{'Avg Confidence':<20} {phi.avg_confidence:>15.3f} {vanilla.avg_confidence:>15.3f} {phi.avg_confidence - vanilla.avg_confidence:>+10.3f}")
+    print("=" * 85)
 
     # Token efficiency
-    if vanilla.accuracy > 0 and phi.accuracy > 0:
-        phi_efficiency = phi.accuracy / max(phi.avg_tokens, 1)
-        vanilla_efficiency = vanilla.accuracy / max(vanilla.avg_tokens, 1)
+    all_models = [(n, m) for n, m in models if m.accuracy > 0]
+    if all_models:
         print("\nToken Efficiency (accuracy/token):")
-        print(f"  φ-RLM:   {phi_efficiency:.6f}")
-        print(f"  Vanilla: {vanilla_efficiency:.6f}")
-        if vanilla_efficiency > 0:
-            print(f"  φ-RLM is {phi_efficiency/vanilla_efficiency:.1f}x more efficient")
+        for name, m in all_models:
+            eff = m.accuracy / max(m.avg_tokens, 1)
+            print(f"  {name:<10}: {eff:.6f}")
     print()
 
 

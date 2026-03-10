@@ -16,7 +16,6 @@ if sys.platform == 'win32':
 
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
-sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 """
 RUN PHI-ENHANCED RLM WITH OPEN ROUTER
@@ -33,8 +32,8 @@ Usage:
 import sys
 import json
 import argparse
-from openrouter_backend import OpenRouterBackend
-from phi_enhanced_rlm import PhiEnhancedRLM
+from src.openrouter_backend import OpenRouterBackend
+from src.phi_enhanced_rlm import PhiEnhancedRLM
 
 def main():
     # Parse arguments
@@ -55,12 +54,12 @@ Examples:
     parser.add_argument("--depth", type=int, default=3, help="Maximum recursion depth (default: 3)")
     parser.add_argument("--context", type=str, help="Read context chunks from JSON file")
     parser.add_argument("--quiet", action="store_true", help="Minimal output")
-    
+
     args = parser.parse_args()
-    
+
     # Determine query source
     query = None
-    
+
     if args.file:
         try:
             with open(args.file, "r", encoding="utf-8-sig") as f:
@@ -83,13 +82,13 @@ Examples:
         query = " ".join(args.query)
     else:
         query = "Explain how the golden ratio relates to E8 symmetry and recursive reasoning in AI systems."
-    
+
     if not args.quiet:
         print("=" * 70)
         print("PHI-ENHANCED RLM WITH OPEN ROUTER")
         print("=" * 70)
         print()
-    
+
     # Initialize the backend (reads from .env)
     if not args.quiet:
         print("Initializing Open Router backend...")
@@ -105,10 +104,10 @@ Examples:
         print(f"✗ Missing dependency: {e}")
         print("\nInstall with: pip install openai python-dotenv")
         return
-    
+
     if not args.quiet:
         print()
-    
+
     # Load context chunks
     if args.context:
         try:
@@ -131,7 +130,7 @@ Examples:
             "Spectral graph theory connects eigenvalues of graph matrices to structural properties like connectivity, clustering, and random walk behavior.",
             "Quantum error correction protects quantum information from decoherence. The φ-threshold for fault-tolerant computation is approximately 0.191.",
         ]
-    
+
     # Initialize RLM with real backend
     if not args.quiet:
         print("Initializing PHI-Enhanced RLM...")
@@ -145,7 +144,7 @@ Examples:
         print(f"✓ RLM ready with {len(context_chunks)} context chunks")
         print(f"✓ Budget allocation: {rlm.budget_map}")
         print()
-    
+
     # Show query (truncated if long)
     if not args.quiet:
         display_query = query[:200] + "..." if len(query) > 200 else query
@@ -154,10 +153,10 @@ Examples:
         print()
         print("Running recursive reasoning (this may take a moment)...")
         print()
-    
+
     # Run recursive solve
     result = rlm.recursive_solve(query, max_depth=args.depth)
-    
+
     # Display results
     if args.quiet:
         print(result.value)
@@ -172,7 +171,7 @@ Examples:
         print(f"Stop Reason: {result.metadata.get('stop_reason', 'N/A')}")
         print(f"Depth Reached: {result.metadata.get('depth', 0)}")
         print()
-        
+
         # Show trace summary
         print("=" * 70)
         print("RECURSION TRACE")
@@ -188,7 +187,7 @@ Examples:
         except FileNotFoundError:
             print("  (trace file not found)")
         print()
-        
+
         # Backend stats
         print("=" * 70)
         print("BACKEND STATS")
@@ -198,7 +197,7 @@ Examples:
         print(f"  Total tokens used: {stats['total_tokens']}")
         print(f"  Model: {stats['model']}")
         print()
-        
+
         print("✓ Complete!")
 
 
