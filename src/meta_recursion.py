@@ -17,6 +17,7 @@ This closes the "structure → modified structure" loop that makes the
 model truly self-evolving.
 """
 
+import json
 import logging
 import time
 from dataclasses import dataclass, field
@@ -116,6 +117,18 @@ STRATEGIES: Dict[str, RecursionStrategy] = {
                      "parallel research -> synthesize -> verify -> report. "
                      "Maps to claude-code-templates deep-research-team agents.",
     ),
+    "planned": RecursionStrategy(
+        name="planned",
+        max_depth=4,
+        budget_distribution="casimir",
+        chunk_strategy="diversity",
+        branch_factor=3,
+        phi_attention=True,
+        sparse_pruning=True,
+        description="Pre-planned execution: decomposes query into a DAG of "
+                     "steps before recursion. Steps execute in topological "
+                     "order with independent branches parallelized.",
+    ),
 }
 
 
@@ -169,12 +182,35 @@ class MetaRecursiveRLM:
         self.strategy_history: List[Dict[str, Any]] = []
         self.performance_cache: Dict[str, List[float]] = {}
 
+    def _llm_classify_query(self, query: str) -> str:
+        """Use LLM to classify query type when keyword matching is weak."""
+        valid_types = list(QUERY_TYPE_STRATEGY.keys())
+        type_list = ", ".join(t for t in valid_types if t != "unknown")
+        classify_prompt = (
+            f"Classify this query into exactly one category: {type_list}\n\n"
+            f"Query: {query}\n\n"
+            f"Respond with just the category name."
+        )
+        try:
+            resp = self.rlm.llm(classify_prompt, max_tokens=20)
+            # Try to parse as JSON first (mock backends return JSON)
+            try:
+                parsed = json.loads(resp)
+                category = parsed.get("answer", "").strip().lower()
+            except (json.JSONDecodeError, AttributeError):
+                category = resp.strip().lower().replace('"', '').replace("'", "")
+            if category in QUERY_TYPE_STRATEGY:
+                return category
+        except Exception:
+            pass
+        return "unknown"
+
     def analyze_query_type(self, query: str) -> str:
         """
         Classify the query type to inform strategy selection.
 
-        Uses keyword matching as a fast heuristic.
-        In production, this would use an LLM or classifier.
+        Uses keyword matching as a fast heuristic, with LLM-based
+        classification as fallback for ambiguous queries.
         """
         query_lower = query.lower()
         scores = {}
@@ -184,9 +220,17 @@ class MetaRecursiveRLM:
             scores[qtype] = score
 
         if not scores or max(scores.values()) == 0:
-            return "unknown"
+            # Weak keyword signal -- try LLM-based classification fallback
+            return self._llm_classify_query(query)
 
-        return max(scores, key=scores.get)
+        best_type = max(scores, key=scores.get)
+        # If keyword match is weak (<=1), supplement with LLM classification
+        if scores[best_type] <= 1:
+            llm_type = self._llm_classify_query(query)
+            if llm_type != "unknown":
+                return llm_type
+
+        return best_type
 
     def select_strategy(self, query_type: str) -> RecursionStrategy:
         """
