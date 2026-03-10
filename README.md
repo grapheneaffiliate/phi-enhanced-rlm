@@ -1,4 +1,4 @@
-# PHI-Enhanced Recursive Language Model (RLM) v3.0
+# PHI-Enhanced Recursive Language Model (RLM) v4.0
 
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.18377963.svg)](https://doi.org/10.5281/zenodo.18377963)
 [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
@@ -6,68 +6,193 @@
 [![Tests](https://github.com/grapheneaffiliate/phi-enhanced-rlm/actions/workflows/test.yml/badge.svg)](https://github.com/grapheneaffiliate/phi-enhanced-rlm/actions)
 [![API](https://img.shields.io/badge/API-FastAPI-green.svg)](https://fastapi.tiangolo.com/)
 
-A self-evolving recursive language model framework built on novel phi-Separation Mathematics. Combines phi-geometric attention, spiral memory, sparse reasoning pruning, and meta-recursion into a unified system that improves itself across sessions.
+A self-evolving AI reasoning system built on golden ratio mathematics. It breaks hard problems into smaller pieces, solves each piece with a specialized agent, checks its own work, and gets smarter over time -- all governed by the golden ratio (phi = 1.618...) and E8 Lie group geometry.
 
-## Features
-
-- **Streaming Output** -- Real-time response streaming
-- **PDF/DOCX Support** -- Analyze documents directly
-- **Smart Web Extraction** -- Trafilatura for clean article extraction
-- **SQLite Embedding Cache** -- Persistent cache survives restarts
-- **Vector Store** -- ChromaDB-backed retrieval for large-scale data analysis
-- **REST API** -- FastAPI with OpenAPI docs
-- **Conversation Memory** -- Stateful chat with context
-- **Parallel Processing** -- Process subquestions concurrently
-- **Confidence Visualization** -- See the reasoning tree
-- **Comparison Mode** -- Compare repos, URLs, or documents
-- **Export Reports** -- Save analyses as markdown
-- **Rich Progress** -- Beautiful terminal UI
-- **Self-Evolution** -- phi-governed parameter optimization across generations
-- **phi-Geometric Attention** -- Golden ratio confidence weighting
-- **phi-Sparse Reasoning** -- Intelligent branch pruning at phi^-1 threshold
-- **phi-Spiral Memory** -- Golden spiral topology with impedance funneling
-- **Meta-Recursion** -- Model reasons about its own reasoning process
-- **Session Memory** -- Cross-session learning and strategy optimization
-- **Benchmarks** -- GSM8K and ARC evaluation with phi-RLM vs vanilla comparison
+**No AI experience required.** Follow the setup below and you'll have it running in under 2 minutes.
 
 ---
 
-## Quick Start
+## Setup (2 minutes)
 
-### 1. Install
+### What you need
+
+- **Python 3.9 or newer** -- [download from python.org](https://python.org) if you don't have it
+- **Git** -- [download from git-scm.com](https://git-scm.com) if you don't have it
+
+### Step 1: Download and install
 
 ```bash
 git clone https://github.com/grapheneaffiliate/phi-enhanced-rlm.git
 cd phi-enhanced-rlm
-pip install -e ".[full,dev]"
+bash setup.sh
 ```
 
-### 2. Configure
+That's it. The setup script installs everything automatically and verifies it works.
+
+**Windows users:** If `bash` isn't available, run these instead:
 
 ```bash
-cp .env.template .env
-# Edit .env: OPENROUTER_API_KEY=sk-or-v1-your-key
+pip install -e .
+copy .env.template .env
+python quickstart.py
 ```
 
-### 3. Run
+### Step 2: See it work
 
 ```bash
-# Interactive chat
-phi-rlm
-# Or: python cli/chat.py
-
-# REST API server
-python api/server.py
-# Visit: http://localhost:8000/docs
-
-# Run self-evolution loop
-phi-evolve
-# Or: python -m src.evolution_loop
-
-# Analyze a repository
-phi-analyze
-# Or: python cli/repo_analyzer.py
+python quickstart.py
 ```
+
+This runs a full demonstration in about 10 seconds -- no API key needed. You'll see the recursive reasoning engine solve a question, display its reasoning tree, show how it allocates computational budget using E8 geometry, and select a meta-strategy.
+
+### Step 3 (optional): Connect a real AI model
+
+The system works out of the box in demo mode using simulated responses. To connect it to a real AI model for actual reasoning:
+
+1. Get a free API key from [openrouter.ai/keys](https://openrouter.ai/keys)
+2. Open the `.env` file in any text editor
+3. Replace `your_openrouter_api_key_here` with your actual key
+4. Save the file
+
+Now when you run the system, it will use a real AI model instead of simulated responses.
+
+---
+
+## What this system does
+
+Traditional AI gives you one answer in one step. This system works differently:
+
+1. **Decomposes** your question into sub-questions
+2. **Routes** each sub-question to a depth-specialized agent (8 agents mapped to E8 Casimir degrees)
+3. **Selects** the most relevant context using phi-geometric diversity optimization
+4. **Solves** each sub-question recursively (sub-questions can have their own sub-questions)
+5. **Verifies** every answer using 3 independent checks (QEC -- Quantum Error Correction inspired)
+6. **Combines** results using torsion-corrected aggregation (minority viewpoints are preserved)
+7. **Stops** when the reasoning has converged (phi-momentum early stopping)
+8. **Learns** from its performance and improves its own parameters over time
+
+### Multi-Agent Architecture (v4.0)
+
+Each recursion depth is served by a different specialized agent:
+
+| Depth | Casimir | Agent | Role |
+|-------|---------|-------|------|
+| 0 | 2 | research-orchestrator | Route and plan |
+| 1 | 8 | query-clarifier | Refine the question |
+| 2 | 12 | research-analyst | Primary analysis |
+| 3 | 14 | technical-researcher | Deep technical dive |
+| 4 | 18 | academic-researcher | Academic rigor |
+| 5 | 20 | fact-checker | QEC verification |
+| 6 | 24 | research-synthesizer | Torsion-corrected synthesis |
+| 7 | 30 | research-orchestrator | Final integration |
+
+---
+
+## How to use it
+
+### Ask a question (Python)
+
+```python
+from src import PhiEnhancedRLM
+from src.phi_enhanced_rlm import MockLLMBackend
+
+# Your knowledge base (the system searches these for relevant context)
+context = [
+    "The golden ratio appears throughout nature and mathematics.",
+    "E8 is the largest exceptional Lie group with 248 dimensions.",
+    "Recursive models decompose complex queries into sub-tasks.",
+]
+
+# Create the model
+rlm = PhiEnhancedRLM(
+    base_llm_callable=MockLLMBackend(seed=42),
+    context_chunks=context,
+)
+
+# Ask anything
+result = rlm.recursive_solve("How does phi relate to E8 symmetry?", max_depth=4)
+
+print(f"Answer: {result.value}")
+print(f"Confidence: {result.confidence:.1%}")
+```
+
+### Let it choose its own strategy (Meta-Recursion)
+
+```python
+from src import MetaRecursiveRLM
+
+meta = MetaRecursiveRLM(rlm)
+result = meta.meta_solve("Analyze the implications of phi-separation for cryptography")
+
+# It automatically detected this is an analytical question
+# and chose the deep_analytical strategy (6 levels deep, phi-attention ON)
+print(f"Strategy: {result.metadata['meta_strategy']}")
+```
+
+Five strategies are available:
+
+| Strategy | Max Depth | Best For |
+|----------|-----------|----------|
+| `deep_analytical` | 6 | Complex analytical questions |
+| `wide_exploratory` | 3 | Open-ended, broad questions |
+| `spiral_convergent` | 5 | General-purpose (default) |
+| `quick_factual` | 2 | Simple factual lookups |
+| `deep_research` | 7 | Full E8 hierarchy with agent specialization |
+
+### Watch it evolve
+
+```bash
+python -m src.evolution_loop --generations 10
+```
+
+This runs the system through 10 generations of self-improvement. Each generation, it adjusts its own parameters (budget allocation, stopping thresholds, pruning ratios, agent assignments) based on how well it performed. The learning rate follows phi^(-n) -- it adapts quickly at first, then makes increasingly fine adjustments.
+
+### Run all tests
+
+```bash
+python -m pytest tests/ -v
+```
+
+### Interactive chat
+
+```bash
+python cli/chat.py
+```
+
+Opens an interactive terminal where you can chat with the system. Supports special commands:
+
+| Command | What it does |
+|---------|-------------|
+| `/depth 5` | Set maximum recursion depth |
+| `/file report.txt` | Load and analyze a text file |
+| `/pdf document.pdf` | Analyze a PDF document |
+| `/url https://...` | Fetch and analyze a web page |
+| `/repo owner/repo` | Analyze a GitHub repository |
+| `/compare A B` | Compare two sources side by side |
+| `/export results.md` | Save the last analysis as markdown |
+| `/stream on` | Enable real-time streaming output |
+| `/history` | Show past queries |
+| `/help` | Show all commands |
+| `/quit` | Exit |
+
+### REST API
+
+```bash
+pip install fastapi uvicorn
+python -m uvicorn api.server:app --reload --port 8000
+```
+
+Opens a web API at `http://localhost:8000` with interactive docs at `http://localhost:8000/docs`.
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/analyze` | POST | Analyze text with recursive reasoning |
+| `/chat` | POST | Chat with context and memory |
+| `/compare` | POST | Compare two sources |
+| `/status` | GET | System health and configuration |
+| `/history` | GET | Past query history |
+| `/evolution/status` | GET | Evolution engine state |
+| `/memory/stats` | GET | Spiral memory statistics |
 
 ---
 
@@ -75,490 +200,168 @@ phi-analyze
 
 ```
 phi-enhanced-rlm/
-├── README.md
-├── LICENSE                          # MIT License
-├── requirements.txt                 # Python dependencies
-├── pyproject.toml                   # Package config (v3.0.0)
-├── .env.template                    # API key template
-│
-├── src/                             # Core library
-│   ├── __init__.py                      # Public API exports
-│   ├── phi_enhanced_rlm.py              # Main RLM orchestrator
-│   ├── phi_separation_novel_mathematics.py  # 10 novel math frameworks
-│   ├── embeddings.py                    # Multi-provider embeddings
-│   ├── cache.py                         # SQLite embedding cache
-│   ├── vector_store.py                  # ChromaDB vector store
-│   ├── extractors.py                    # PDF/DOCX/web/code extractors
-│   ├── progress.py                      # Rich progress display
-│   ├── openrouter_backend.py            # OpenRouter LLM backend
-│   ├── async_backend.py                 # Async LLM operations
-│   ├── evolution.py                     # phi-governed self-evolution engine
-│   ├── evolution_loop.py                # Evolution main loop
-│   ├── phi_attention.py                 # phi-geometric attention injection
-│   ├── phi_sparse_reasoning.py          # phi-sparse branch pruning
-│   ├── phi_memory.py                    # phi-spiral memory
-│   ├── session_memory.py                # Cross-session persistent memory
-│   └── meta_recursion.py                # Meta-recursion strategies
-│
-├── cli/                             # Command-line tools
-│   ├── chat.py                          # Interactive chat v2.0
-│   ├── run_rlm.py                       # Simple query runner
-│   ├── repo_analyzer.py                 # GitHub/URL analyzer
-│   └── validate_rlm.py                  # System validation
-│
-├── api/                             # REST API
-│   └── server.py                        # FastAPI server
-│
-├── web/                             # Web interface
-│   └── index.html                       # Standalone web UI
-│
-├── tests/                           # Test suite
-│   ├── test_upgrades.py                 # Core feature tests
-│   ├── test_evolution.py                # Evolution engine tests
-│   ├── test_benchmarks.py               # Benchmark validation
-│   └── test_real_llm.py                 # LLM integration tests
-│
-├── benchmarks/                      # Benchmark datasets & runner
-│   ├── runner.py                        # phi-RLM vs vanilla comparison
-│   ├── gsm8k_sample.json               # Grade School Math 8K sample
-│   ├── arc_sample.json                  # ARC reasoning sample
-│   └── results/                         # Benchmark output
-│
-├── docs/                            # Documentation
-│   ├── 2512.24601v1.pdf                 # Research paper
-│   ├── Novel_Mathematics_from_Phi_Separation.docx
-│   └── UNIFICATION.md                   # Unification framework
-│
-└── sessions/                        # Session memory storage
+|
++-- quickstart.py              <- Run this first
++-- setup.sh                   <- One-click installation
++-- CLAUDE.md                  <- Project intelligence for Claude Code
++-- .env.template              <- Configuration template (copy to .env)
+|
++-- src/                       <- Core engine (22 modules)
+|   +-- phi_enhanced_rlm.py        Main recursive engine
+|   |                               - recursive_solve() core loop
+|   |                               - phi-Gram chunk selection
+|   |                               - QEC verification (3 checks)
+|   |                               - Torsion-corrected aggregation
+|   |
+|   +-- phi_separation_novel_mathematics.py
+|   |                               Mathematical foundations
+|   |                               - phi-Gram matrix theory
+|   |                               - E8 spectral flow
+|   |                               - Casimir degrees: [2,8,12,14,18,20,24,30]
+|   |                               - 10 interconnected math frameworks
+|   |
+|   +-- agent_router.py            Multi-agent depth routing (v4.0)
+|   |                               - 8 specialized agent personas
+|   |                               - Depth-to-agent mapping via E8 Casimir
+|   |                               - Evolvable agent assignments
+|   |
+|   +-- skill_loader.py            Skill file integration (v4.0)
+|   |                               - Loads domain skills from .claude/skills/
+|   |                               - Keyword-based retrieval
+|   |
+|   +-- evolution.py                Self-evolution engine
+|   |                               - EvolutionState learnable parameters
+|   |                               - phi-scaled learning rate (phi^-n)
+|   |                               - Budget, stopping, agent mutations
+|   |
+|   +-- evolution_loop.py           Evolution training loop
+|   +-- meta_recursion.py           Meta-reasoning (5 strategies)
+|   +-- phi_attention.py            phi-geometric attention injection
+|   +-- phi_sparse_reasoning.py     phi-ratio branch pruning
+|   +-- phi_memory.py               Golden spiral persistent memory
+|   +-- session_memory.py           Cross-session learning
+|   +-- phi_retrieval.py            phi-kernel similarity search
+|   +-- phi_bayesian.py             phi-Bayesian optimization
+|   +-- ensemble_backend.py         Multi-model routing
+|   +-- streaming.py                Real-time streaming output
+|   +-- embeddings.py               Multi-provider embeddings
+|   +-- cache.py                    SQLite embedding cache
+|   +-- extractors.py               PDF, DOCX, web, code extraction
+|   +-- openrouter_backend.py       OpenRouter API client
+|   +-- async_backend.py            Async LLM backend
+|   +-- vector_store.py             ChromaDB vector store
+|   +-- progress.py                 Terminal progress display
+|
++-- tests/                     <- Test suite
+|   +-- test_upgrades.py           Core engine tests
+|   +-- test_evolution.py          Evolution tests
+|   +-- test_benchmarks.py         Benchmark tests
+|   +-- test_real_llm.py           Real API integration tests
+|
++-- benchmarks/                <- Evaluation datasets
+|   +-- runner.py                  phi-RLM vs vanilla comparison
+|   +-- gsm8k_sample.json         Math word problems
+|   +-- arc_sample.json           Reasoning questions
+|
++-- cli/                       <- Command-line tools
+|   +-- chat.py                    Interactive chat
+|   +-- repo_analyzer.py           GitHub repo analysis
+|   +-- run_rlm.py                 Quick query runner
+|   +-- validate_rlm.py            System validation
+|
++-- api/server.py              <- REST API (FastAPI)
++-- web/                       <- Web interfaces
+|   +-- index.html                 Documentation page
+|   +-- dashboard.html             Evolution dashboard
+|
++-- docs/                      <- Documentation
+    +-- UNIFICATION.md             phi-RLM + phi-GEH + PROMETHEUS
+    +-- 2512.24601v1.pdf           Reference paper
 ```
 
 ---
 
-## Interactive Chat
+## Key Concepts
 
-```bash
-phi-rlm
-# Or: python cli/chat.py
-```
+### The Golden Ratio (phi = 1.618...)
 
-### Commands
+A number found everywhere in nature -- sunflower spirals, galaxy arms, DNA molecules. This project uses it as the governing constant for AI reasoning because it's the "most irrational" number, meaning patterns built on it have the least repetition and maximum information coverage.
 
-| Command | Description |
-|---------|-------------|
-| `<question>` | Ask any question |
-| `/repo owner/repo` | Analyze GitHub repository |
-| `/url https://...` | Analyze web page |
-| `/local ./path` | Analyze local directory |
-| `/pdf path.pdf` | Analyze PDF document |
-| `/doc path.docx` | Analyze Word document |
-| `/image path.png` | Describe & analyze image |
-| `/compare s1 s2` | Compare two sources |
-| `/export file.md` | Export last analysis |
-| `/history` | Show query history |
-| `/stream on\|off` | Toggle streaming |
-| `/trace` | Show reasoning tree |
-| `/depth N` | Set recursion depth (0-10) |
-| `/help` | Show all commands |
-| `/quit` | Exit |
+### E8 Lie Group
 
----
+A mathematical structure with 248 dimensions encoding deep symmetries. This project uses its "Casimir degrees" -- [2, 8, 12, 14, 18, 20, 24, 30] -- to decide how much computational budget each reasoning depth gets and which specialized agent handles it.
 
-## REST API
+### Recursive Reasoning
 
-```bash
-python api/server.py
-# Or: uvicorn api.server:app --reload --port 8000
-```
+Instead of answering in one shot, the system breaks questions into sub-questions, answers each separately, then combines results. Sub-questions can themselves be broken down further, creating a tree of reasoning.
 
-### Endpoints
+### Multi-Agent Specialization (v4.0)
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `GET` | `/` | API info |
-| `GET` | `/status` | System status |
-| `GET` | `/docs` | Swagger UI |
-| `POST` | `/analyze` | Analyze with RLM |
-| `POST` | `/chat` | Chat with memory |
-| `POST` | `/compare` | Compare sources |
-| `GET` | `/history` | Query history |
+Each recursion depth is handled by a different specialized agent persona. The research-orchestrator plans at depth 0, the query-clarifier refines at depth 1, analysts and researchers investigate at depths 2-4, the fact-checker verifies at depth 5, the synthesizer combines at depth 6, and the orchestrator integrates the final result at depth 7. The evolution engine can reassign agents to optimize performance.
 
-### Example: Analyze
+### Self-Evolution
 
-```bash
-curl -X POST http://localhost:8000/analyze \
-  -H "Content-Type: application/json" \
-  -d '{"query": "What is E8?", "max_depth": 3}'
-```
+After each benchmark run, the system adjusts its own parameters. The adjustment follows phi^(-n) scaling -- big changes early, increasingly subtle refinements over time.
 
-```json
-{
-  "answer": "E8 is the largest exceptional Lie group...",
-  "confidence": 0.85,
-  "depth_reached": 2,
-  "chunks_used": [0, 3, 5]
-}
-```
+### QEC Verification
 
----
+Every answer is independently verified by 3 checks (contradiction, completeness, counterexample). When the agent router is active, verification uses the fact-checker agent persona. High confidence only when 2 out of 3 pass.
 
-## Self-Evolution (v3.0)
+### Meta-Recursion
 
-The phi-evolution engine mutates RLM parameters across generations, using phi-scaled learning rates to optimize stopping criteria, budget allocation, and confidence thresholds.
-
-```bash
-# Run the evolution loop
-phi-evolve
-
-# Or programmatically
-from src.evolution import PhiEvolutionEngine, EvolutionState
-
-engine = PhiEvolutionEngine()
-state = engine.evolve(traces, current_state)
-print(f"Generation {state.generation}, learning rate: {state.learning_rate:.4f}")
-```
-
-The engine:
-- Evaluates reasoning traces to compute fitness metrics
-- Applies phi-scaled mutations (learning rate decays by phi^-1 per generation)
-- Tightens or relaxes stopping criteria based on performance
-- Persists state across sessions for continuous improvement
-
----
-
-## phi-Geometric Attention (v3.0)
-
-Injects phi-structured prompts into the reasoning process with golden ratio confidence weighting.
-
-```python
-from src.phi_attention import PhiAttentionInjector, PhiConfidenceScaler
-
-injector = PhiAttentionInjector()
-enhanced_prompt = injector.inject(original_prompt, depth=2)
-
-scaler = PhiConfidenceScaler()
-weighted = scaler.scale(confidence, depth)  # Weights: phi, phi^-1, phi^-2, ...
-```
-
----
-
-## phi-Sparse Reasoning (v3.0)
-
-Prunes low-value reasoning branches using a phi^-1 threshold (~61.8% retention), with diversity-aware selection to avoid collapsing to a single reasoning path.
-
-```python
-from src.phi_sparse_reasoning import PhiSparseReasoner
-
-reasoner = PhiSparseReasoner()
-pruned = reasoner.prune(branches)  # Keeps top phi^-1 fraction
-```
-
----
-
-## phi-Spiral Memory (v3.0)
-
-Organizes memory using golden spiral topology with impedance funneling for retrieval.
-
-```python
-from src.phi_memory import PhiSpiralMemory
-from src.session_memory import SessionMemory
-
-# Within-session spiral memory
-memory = PhiSpiralMemory()
-memory.store(key, value, confidence)
-retrieved = memory.retrieve(query, top_k=5)
-
-# Cross-session persistent memory
-session = SessionMemory()
-session.record(query, result, strategy)
-best_strategy = session.recommend_strategy(new_query)
-```
-
----
-
-## Meta-Recursion (v3.0)
-
-The model reasons about its own reasoning process, selecting from multiple strategies adaptively.
-
-```python
-from src.meta_recursion import MetaRecursiveRLM, RecursionStrategy
-
-meta = MetaRecursiveRLM(backend, chunks)
-result = meta.solve(query)  # Auto-selects best strategy
-```
-
-Available strategies include depth-first, breadth-first, iterative deepening, and confidence-guided search.
-
----
-
-## Document Analysis
-
-### PDF
-
-```bash
-pip install PyMuPDF
-```
-
-```python
-from src.extractors import extract_pdf_content
-
-result = extract_pdf_content("paper.pdf")
-print(f"Title: {result.title}")
-print(f"Pages: {result.metadata['page_count']}")
-```
-
-### Word Documents
-
-```bash
-pip install python-docx
-```
-
-```python
-from src.extractors import extract_docx_content
-
-result = extract_docx_content("report.docx")
-print(result.text)
-```
-
----
-
-## Embedding Cache
-
-Embeddings are cached in SQLite for fast repeated analysis:
-
-```python
-from src.cache import SQLiteEmbeddingCache
-
-cache = SQLiteEmbeddingCache()
-cache.set("text", "model-v1", embedding_vector)
-cached = cache.get("text", "model-v1")
-
-stats = cache.get_stats()
-print(f"Hits: {stats.hits}, Entries: {stats.entry_count}")
-```
-
-Cache location: `~/.cache/phi_rlm/embeddings.db`
-
----
-
-## Vector Store Pipeline
-
-For analyzing large datasets (thousands of documents), use the Vector Store + RLM pipeline:
-
-```bash
-pip install chromadb sentence-transformers
-```
-
-### Ingest Documents
-
-```python
-from src.vector_store import VectorStore, RLMPipeline
-
-store = VectorStore("my_research")
-store.add_file("paper.pdf")
-store.add_directory("./documents", recursive=True)
-print(f"Indexed {store.count()} chunks")
-```
-
-### Query + Analyze
-
-```python
-results = store.query("What are the main findings?", top_k=10)
-for r in results:
-    print(f"{r.score:.2f}: {r.text[:100]}...")
-
-pipeline = RLMPipeline("my_research")
-result = pipeline.analyze(
-    "What are the contradictions between these papers?",
-    top_k=20,
-    max_depth=3
-)
-print(f"Answer: {result['answer']}")
-print(f"Confidence: {result['confidence']:.1%}")
-```
-
-### CLI Usage
-
-```bash
-python src/vector_store.py ingest ./documents -c research --recursive
-python src/vector_store.py query "main findings" -c research -k 10
-python src/vector_store.py analyze "What are the key themes?" -c research
-```
-
-Data location: `~/.cache/phi_rlm/vectordb/`
-
----
-
-## Parallel Processing
-
-```python
-from src.phi_enhanced_rlm import PhiEnhancedRLM
-
-rlm = PhiEnhancedRLM(backend, context_chunks)
-rlm.enable_parallel(True)  # Subquestions processed concurrently
-result = rlm.recursive_solve("Complex query", max_depth=3)
-```
-
----
-
-## Reasoning Tree
-
-```python
-rlm = PhiEnhancedRLM(backend, context_chunks)
-result = rlm.recursive_solve("Query")
-rlm.print_reasoning_tree()
-```
-
-```
-REASONING TREE
-──────────────
-D0: What is the golden ratio?
-   Conf: 85.0% | Chunks: [0, 3, 5]
-  D1: Mathematical definition...
-     Conf: 75.0% | Stopped: momentum
-  D1: Applications in nature...
-     Conf: 80.0% | Stopped: spectral
-```
-
----
-
-## Benchmarks
-
-Compare phi-RLM against vanilla recursive decomposition on standard benchmarks:
-
-```bash
-# Run benchmark comparison
-python benchmarks/runner.py
-
-# Run benchmark tests
-pytest tests/test_benchmarks.py -v
-```
-
-Includes GSM8K (math reasoning) and ARC (abstract reasoning) sample datasets. Results are saved to `benchmarks/results/`.
-
----
-
-## Comparison Mode
-
-```bash
-# In chat:
-> /compare facebook/react vuejs/vue
-
-# Or via API:
-curl -X POST http://localhost:8000/compare \
-  -d '{"source1": "react", "source2": "vue"}'
-```
+Before solving, the system classifies your question (analytical? factual? creative? research?) and picks the best strategy. If the first strategy fails, it tries an alternative.
 
 ---
 
 ## Mathematical Foundations
 
-The system is built on 10 novel mathematical frameworks from phi-Separation theory:
-
-### phi-Separation Kernel
-
 ```
-K(x, y) = phi^(-||x - y||/delta)
-```
-
-### E8 Casimir Budget Allocation
-
-Token budgets distributed across recursion depths using E8 Lie group Casimir eigenvalues:
-
-```
-Depth 0: 635 tokens (15.5%)
-Depth 1: 577 tokens (14.1%)
-...
-Depth 7: 405 tokens (9.9%)
+phi-Gram Kernel:          K(x,y) = phi^(-||x-y||/delta)
+Casimir Budget:           weight(d) = phi^(-C_d/30), C in {2,8,12,14,18,20,24,30}
+phi-Momentum Stopping:    m(t+1) = phi^(-1) * m(t) + (1-phi^(-1)) * signal(t)
+Torsion Correction:       result = base + (28/248) * minority_view
+QEC Threshold:            p_phi = (1-phi^(-1))/2 ~ 0.191
+Evolution Learning Rate:  lr(n) = phi^(-n)
 ```
 
-### QEC Threshold
-
-```
-p_phi = (1 - phi^{-1})/2 ~ 0.191
-```
-
-### Additional Frameworks
-
-- **phi-Gram Theory** -- Gram matrix analysis on phi-scaled inner products
-- **E8 Spectral Flow** -- Casimir eigenvalue-guided token allocation
-- **phi-Kernel Renormalization** -- Renormalization group flow for confidence calibration
-- **H4-Prime Theory** -- H4 Coxeter group structure for multi-scale reasoning
-- **Torsion-Corrected FA** -- Factor analysis with geometric torsion corrections
-- **phi-Lattice Cryptography** -- Lattice-based verification of reasoning integrity
-- **Casimir Cohomology** -- Cohomological analysis for reasoning consistency
-- **Unified Field Theory** -- Integration of all frameworks into a single system
-
-See `docs/` for the full research paper and mathematical foundations document.
+Full details in `src/phi_separation_novel_mathematics.py` -- 10 interconnected mathematical frameworks including phi-Gram determinant theory, E8 spectral flow, renormalization group, H4-projected prime theory, lattice cryptography, quantum error correction codes, Casimir flow optimization, cohomology theory, and unified field equations.
 
 ---
 
-## Testing
+## Optional Dependencies
+
+The core runs with just `numpy`, `scipy`, and `openai`. Install extras for more features:
 
 ```bash
-# Run all tests
-pytest tests/ -v
-
-# Skip integration tests (no API key needed)
-pytest tests/ -v -m "not integration"
-
-# Run specific test files
-pytest tests/test_evolution.py -v
-pytest tests/test_benchmarks.py -v
-pytest tests/test_real_llm.py -v
+pip install -e ".[full]"              # Everything
+pip install sentence-transformers     # Local embeddings (free)
+pip install chromadb                  # Vector database
+pip install fastapi uvicorn           # REST API
+pip install PyMuPDF                   # PDF support
+pip install python-docx               # Word documents
+pip install rich                      # Beautiful terminal output
 ```
-
-CI runs tests on Python 3.9, 3.10, 3.11, and 3.12 with ruff linting.
 
 ---
 
-## Installation
+## Troubleshooting
 
-```bash
-# Full install with all optional dependencies
-pip install -e ".[full,dev]"
+**"No embedding provider available, using mock embeddings"** -- Normal. Works fine with mock embeddings. For better results, install `sentence-transformers` or add your OpenRouter API key.
 
-# Core only
-pip install -e .
+**"ChromaDB not installed"** -- Optional. Only needed for large document collections.
 
-# With benchmark support
-pip install -e ".[benchmark]"
-```
+**Import errors** -- Always run from the project root directory. Use `from src import ...`.
 
-### CLI Entry Points
-
-After installation, three CLI commands are available:
-
-| Command | Description |
-|---------|-------------|
-| `phi-rlm` | Interactive chat |
-| `phi-analyze` | Repository/URL analyzer |
-| `phi-evolve` | Run self-evolution loop |
+**Windows encoding issues** -- Set: `set PYTHONIOENCODING=utf-8`
 
 ---
-
-## System Validation
-
-```bash
-python cli/validate_rlm.py
-```
-
-Checks that all modules load correctly, dependencies are available, and the system is ready.
-
----
-
-## Contributing
-
-Pull requests welcome! Please run tests and lint before submitting:
-
-```bash
-pytest tests/ -v -m "not integration"
-ruff check src/ tests/ benchmarks/ --select E,F,W --ignore E501
-```
 
 ## License
 
 MIT License -- see [LICENSE](LICENSE).
 
----
+## Author
 
-*"The universe may be built on E8 geometry, with phi as its fundamental scaling constant."*
+Timothy McGirl -- Geometric Standard Model (GSM) Framework
+
+*"The universe may be built on the geometry of E8, with the golden ratio as its fundamental scaling constant."*
