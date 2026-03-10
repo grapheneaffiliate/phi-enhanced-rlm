@@ -12,7 +12,7 @@ generate its critique.
 """
 
 import logging
-from typing import Optional, Dict, Any
+from typing import Dict, Any
 from dataclasses import dataclass
 
 logger = logging.getLogger(__name__)

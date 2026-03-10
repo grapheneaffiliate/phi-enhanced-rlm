@@ -12,10 +12,8 @@ This provides a 6th meta-recursion strategy: "planned".
 
 import json
 import logging
-from typing import List, Dict, Optional, Any
+from typing import List, Dict, Any
 from dataclasses import dataclass, field
-
-from .phi_separation_novel_mathematics import PHI_INV
 
 logger = logging.getLogger(__name__)
 
