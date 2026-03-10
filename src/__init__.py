@@ -26,6 +26,10 @@ from .phi_sparse_reasoning import PhiSparseReasoner
 from .phi_memory import PhiSpiralMemory
 from .session_memory import SessionMemory
 from .meta_recursion import MetaRecursiveRLM, RecursionStrategy
+from .phi_retrieval import phi_kernel_similarity, phi_retrieval_score
+from .phi_bayesian import PhiBayesianOptimizer
+from .ensemble_backend import EnsembleBackend
+from .streaming import ReasoningEvent, recursive_solve_stream
 
 # Vector store (optional - requires chromadb)
 try:
@@ -79,4 +83,14 @@ __all__ = [
     # Meta-Recursion (v3.0)
     "MetaRecursiveRLM",
     "RecursionStrategy",
+    # φ-Kernel Retrieval (v3.0)
+    "phi_kernel_similarity",
+    "phi_retrieval_score",
+    # φ-Bayesian Optimization (v3.0)
+    "PhiBayesianOptimizer",
+    # Ensemble Backend (v3.0)
+    "EnsembleBackend",
+    # Streaming (v3.0)
+    "ReasoningEvent",
+    "recursive_solve_stream",
 ]

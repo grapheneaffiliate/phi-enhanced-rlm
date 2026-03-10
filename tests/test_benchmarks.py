@@ -5,14 +5,13 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
-sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 sys.path.insert(0, str(Path(__file__).parent.parent / "benchmarks"))
 
 from runner import (
     VanillaRLM, load_dataset, check_answer, run_benchmark,
     estimate_tokens,
 )
-from phi_enhanced_rlm import MockLLMBackend, SubCallResult
+from src.phi_enhanced_rlm import MockLLMBackend, SubCallResult
 
 
 class TestBenchmarkDatasets:

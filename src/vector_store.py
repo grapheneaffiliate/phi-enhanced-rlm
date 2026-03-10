@@ -302,7 +302,7 @@ class VectorStore:
             text = path.read_text(encoding='utf-8', errors='ignore')
         elif ext == '.pdf':
             try:
-                from extractors import extract_pdf_content
+                from .extractors import extract_pdf_content
                 result = extract_pdf_content(str(path))
                 text = result.text
                 file_metadata["title"] = result.title
@@ -311,7 +311,7 @@ class VectorStore:
                 raise ImportError("PDF extraction requires PyMuPDF. Run: pip install PyMuPDF")
         elif ext == '.docx':
             try:
-                from extractors import extract_docx_content
+                from .extractors import extract_docx_content
                 result = extract_docx_content(str(path))
                 text = result.text
                 file_metadata["title"] = result.title
@@ -507,10 +507,10 @@ class RLMPipeline:
     def _init_rlm(self, chunks: List[str]):
         """Initialize RLM with context chunks."""
         if self.backend is None:
-            from openrouter_backend import OpenRouterBackend
+            from .openrouter_backend import OpenRouterBackend
             self.backend = OpenRouterBackend(api_key=self._api_key)
 
-        from phi_enhanced_rlm import PhiEnhancedRLM
+        from .phi_enhanced_rlm import PhiEnhancedRLM
         self.rlm = PhiEnhancedRLM(
             base_llm_callable=self.backend,
             context_chunks=chunks,

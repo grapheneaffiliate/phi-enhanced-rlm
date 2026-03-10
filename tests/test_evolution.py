@@ -8,10 +8,9 @@ import pytest
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
-sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from evolution import PhiEvolutionEngine, EvolutionState, EvaluationResult
-from phi_separation_novel_mathematics import PHI_INV
+from src.evolution import PhiEvolutionEngine, EvolutionState, EvaluationResult
+from src.phi_separation_novel_mathematics import PHI_INV
 
 
 class TestEvolutionState:
@@ -151,7 +150,7 @@ class TestEvolutionLoop:
 
     def test_evolution_loop_runs(self):
         """Verify evolution loop runs without errors."""
-        from evolution_loop import run_evolution
+        from src.evolution_loop import run_evolution
 
         dataset_path = str(Path(__file__).parent.parent / "benchmarks" / "gsm8k_sample.json")
         state_path = "/tmp/test_evo_loop_state.json"

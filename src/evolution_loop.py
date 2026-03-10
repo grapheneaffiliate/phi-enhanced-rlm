@@ -19,9 +19,10 @@ import time
 from typing import List, Dict
 
 
-from evolution import PhiEvolutionEngine, EvolutionState, EvaluationResult
-from phi_enhanced_rlm import PhiEnhancedRLM, MockLLMBackend
-from phi_separation_novel_mathematics import PHI
+from .evolution import PhiEvolutionEngine, EvolutionState, EvaluationResult
+from .phi_enhanced_rlm import PhiEnhancedRLM, MockLLMBackend
+from .phi_separation_novel_mathematics import PHI
+from .session_memory import SessionMemory
 
 logger = logging.getLogger(__name__)
 
@@ -129,26 +130,53 @@ def run_evolution(generations: int = 10,
     questions = load_benchmark(dataset_path)[:max_questions]
     ground_truth = [q.get("expected_answer", "") for q in questions]
     evaluations = []
+    session_mem = SessionMemory(path="sessions/")
 
     if verbose:
         print(f"\n{'='*60}")
         print(f"φ-EVOLUTION LOOP: {generations} generations")
         print(f"Dataset: {dataset_path} ({len(questions)} questions)")
         print(f"Starting generation: {engine.state.generation}")
+        print(f"Past sessions: {session_mem.get_total_sessions()}")
         print(f"{'='*60}\n")
 
     for gen in range(generations):
         gen_start = time.time()
 
+        # Enrich context with relevant past sessions
+        effective_context = list(context_chunks) if context_chunks else []
+        if questions and session_mem.get_total_sessions() > 0:
+            relevant = session_mem.load_relevant_sessions(
+                questions[0]["question"], k=3
+            )
+            for session in relevant:
+                result = session.get("result", {})
+                if result.get("confidence", 0) > 0.7:
+                    past_answer = result.get("query", "")[:100]
+                    effective_context.append(
+                        f"Past success: {past_answer}"
+                    )
+
         # Create RLM with current evolved state
         rlm = create_rlm_with_evolution(
             engine.state,
             llm_backend=llm_backend,
-            context_chunks=context_chunks,
+            context_chunks=effective_context or context_chunks,
         )
 
         # Run benchmark
         traces = run_generation(rlm, questions, max_depth=max_depth)
+
+        # Save session traces for cross-session learning
+        session_mem.save_session(
+            trace=traces,
+            result={
+                "query": questions[0]["question"] if questions else "",
+                "confidence": sum(t["confidence"] for t in traces) / len(traces) if traces else 0,
+                "generation": engine.state.generation,
+            },
+            evolution_state=engine.state.to_dict() if hasattr(engine.state, 'to_dict') else None,
+        )
 
         # Evaluate
         evaluation = engine.evaluate_generation(traces, ground_truth)

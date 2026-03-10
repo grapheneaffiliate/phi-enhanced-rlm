@@ -16,7 +16,6 @@ if sys.platform == 'win32':
 
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
-sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 """
 PHI-ENHANCED RLM VALIDATION & EXPLANATION SCRIPT
 =================================================
@@ -32,7 +31,7 @@ Run with: python validate_rlm.py
 import json
 import os
 import time
-from typing import Dict, Any, List
+from typing import Dict
 
 # ============================================================================
 # SECTION 1: WHAT THE SYSTEM DOES
@@ -44,7 +43,7 @@ def explain_system():
     print("WHAT THE PHI-ENHANCED RLM DOES")
     print("=" * 80)
     print()
-    
+
     explanations = [
         ("1. RECURSIVE LANGUAGE MODEL (RLM)", """
    The core idea: Instead of asking an LLM one question and getting one answer,
@@ -54,7 +53,7 @@ def explain_system():
    WHY THIS MATTERS: Regular LLMs can miss important aspects of complex questions.
    The RLM ensures thorough coverage by decomposing and reassembling answers.
 """),
-        
+
         ("2. PHI-GRAM CHUNK SELECTION", """
    The system selects which pieces of context (knowledge) to include using
    the "golden ratio kernel": K(x,y) = φ^(-||x-y||/δ)
@@ -111,12 +110,12 @@ def explain_system():
    preserves subtle relationships between sub-answers.
 """),
     ]
-    
+
     for title, explanation in explanations:
         print(f"\n{title}")
         print("-" * len(title))
         print(explanation)
-    
+
     input("\nPress Enter to continue to validation...\n")
 
 
@@ -130,9 +129,9 @@ def validate_components() -> Dict[str, bool]:
     print("VALIDATION: CHECKING ALL COMPONENTS")
     print("=" * 80)
     print()
-    
+
     results = {}
-    
+
     # Test 1: NumPy/SciPy available
     print("1. Testing NumPy/SciPy import...")
     try:
@@ -148,7 +147,7 @@ def validate_components() -> Dict[str, bool]:
     except Exception as e:
         print(f"   ✗ Failed: {e}")
         results["numpy_scipy"] = False
-    
+
     # Test 2: OpenAI client available
     print("\n2. Testing OpenAI client import...")
     try:
@@ -158,7 +157,7 @@ def validate_components() -> Dict[str, bool]:
     except ImportError as e:
         print(f"   ✗ Failed: {e}")
         results["openai"] = False
-    
+
     # Test 3: Environment variables
     print("\n3. Testing environment configuration...")
     try:
@@ -176,33 +175,33 @@ def validate_components() -> Dict[str, bool]:
     except Exception as e:
         print(f"   ✗ Failed: {e}")
         results["env_config"] = False
-    
+
     # Test 4: Backend initialization
     print("\n4. Testing OpenRouter backend...")
     try:
-        from openrouter_backend import OpenRouterBackend
+        from src.openrouter_backend import OpenRouterBackend
         backend = OpenRouterBackend()
         print(f"   ✓ Backend initialized with model: {backend.config.model}")
         results["backend"] = True
     except Exception as e:
         print(f"   ✗ Failed: {e}")
         results["backend"] = False
-    
+
     # Test 5: RLM Core
     print("\n5. Testing PHI-Enhanced RLM core...")
     try:
-        from phi_enhanced_rlm import PhiEnhancedRLM, CASIMIR_DEGREES, PHI, MockLLMBackend
+        from src.phi_enhanced_rlm import CASIMIR_DEGREES, PHI
         print(f"   ✓ PHI constant: {PHI:.6f}")
         print(f"   ✓ E8 Casimir degrees: {CASIMIR_DEGREES}")
         results["rlm_core"] = True
     except Exception as e:
         print(f"   ✗ Failed: {e}")
         results["rlm_core"] = False
-    
+
     # Test 6: API connectivity (quick test)
     print("\n6. Testing API connectivity...")
     try:
-        from openrouter_backend import OpenRouterBackend
+        from src.openrouter_backend import OpenRouterBackend
         backend = OpenRouterBackend()
         response = backend("Say 'test' only", max_tokens=10)
         parsed = json.loads(response)
@@ -211,7 +210,7 @@ def validate_components() -> Dict[str, bool]:
     except Exception as e:
         print(f"   ✗ Failed: {e}")
         results["api_connectivity"] = False
-    
+
     # Summary
     print("\n" + "=" * 80)
     print("VALIDATION SUMMARY")
@@ -219,11 +218,11 @@ def validate_components() -> Dict[str, bool]:
     passed = sum(1 for v in results.values() if v)
     total = len(results)
     print(f"\nPassed: {passed}/{total}")
-    
+
     for name, status in results.items():
         emoji = "✓" if status else "✗"
         print(f"  {emoji} {name}")
-    
+
     return results
 
 
@@ -237,39 +236,39 @@ def demonstrate_value():
     print("DEMONSTRATION: THE VALUE THIS SYSTEM PROVIDES")
     print("=" * 80)
     print()
-    
+
     print("Let's compare a REGULAR LLM call vs PHI-ENHANCED RLM:")
     print()
-    
-    from openrouter_backend import OpenRouterBackend
-    from phi_enhanced_rlm import PhiEnhancedRLM
-    
+
+    from src.openrouter_backend import OpenRouterBackend
+    from src.phi_enhanced_rlm import PhiEnhancedRLM
+
     backend = OpenRouterBackend()
-    
+
     query = "What are the security implications of using the golden ratio in cryptographic systems?"
-    
+
     # Regular LLM call
     print("1. REGULAR LLM CALL (Direct API)")
     print("-" * 40)
     start = time.time()
     regular_response = backend(f"Answer briefly: {query}", max_tokens=200)
     regular_time = time.time() - start
-    
+
     try:
         regular_parsed = json.loads(regular_response)
         regular_answer = regular_parsed.get("answer", regular_response)
-    except:
+    except Exception:
         regular_answer = regular_response
-    
+
     print(f"Answer: {regular_answer[:300]}...")
     print(f"Time: {regular_time:.2f}s")
     print(f"Tokens: {backend.total_tokens}")
     print()
-    
+
     # PHI-Enhanced RLM call
     print("2. PHI-ENHANCED RLM CALL (Recursive + QEC)")
     print("-" * 40)
-    
+
     context_chunks = [
         "The golden ratio φ = (1 + √5)/2 appears in mathematics and nature with unique algebraic properties.",
         "φ-Separation for Lattice Cryptography uses φ-Gram determinant for SVP criterion.",
@@ -280,21 +279,21 @@ def demonstrate_value():
         "The golden ratio kernel K(x,y) = φ^(-||x-y||/δ) has optimal information-theoretic properties.",
         "E8 lattice provides optimal sphere packing in 8 dimensions with applications in error correction.",
     ]
-    
+
     rlm = PhiEnhancedRLM(
         base_llm_callable=backend,
         context_chunks=context_chunks,
         total_budget_tokens=2048,
         trace_file="validation_trace.jsonl"
     )
-    
+
     backend.call_count = 0
     backend.total_tokens = 0
-    
+
     start = time.time()
     result = rlm.recursive_solve(query, max_depth=2)
     rlm_time = time.time() - start
-    
+
     print(f"Answer: {result.value[:300]}...")
     print(f"Confidence: {result.confidence:.4f}")
     print(f"Stop Reason: {result.metadata.get('stop_reason', 'N/A')}")
@@ -302,13 +301,13 @@ def demonstrate_value():
     print(f"API Calls: {backend.call_count}")
     print(f"Total Tokens: {backend.total_tokens}")
     print()
-    
+
     # Compare
     print("=" * 80)
     print("VALUE COMPARISON")
     print("=" * 80)
     print()
-    
+
     print("WHAT THE RLM PROVIDES THAT REGULAR LLM DOESN'T:")
     print()
     print("1. CALIBRATED CONFIDENCE")
@@ -331,7 +330,7 @@ def demonstrate_value():
     print("   - RLM distributes tokens across depth levels using E8 Casimir weights")
     print("   - Prevents wasting tokens on trivial sub-questions")
     print()
-    
+
     return result
 
 
@@ -345,7 +344,7 @@ def compute_value_metrics():
     print("QUANTIFIABLE VALUE METRICS")
     print("=" * 80)
     print()
-    
+
     metrics = {
         "Confidence Calibration": "QEC verification provides calibrated confidence scores",
         "Context Efficiency": "φ-Gram selection maximizes info per token",
@@ -353,14 +352,14 @@ def compute_value_metrics():
         "Budget Optimization": "E8 Casimir allocation saves ~20% tokens vs uniform",
         "Early Stopping": "φ-momentum saves ~30% compute on high-confidence queries",
     }
-    
+
     print("Based on the mathematical framework:")
     print()
     for metric, description in metrics.items():
         print(f"  • {metric}")
         print(f"    {description}")
         print()
-    
+
     print("CONCRETE BENEFITS:")
     print()
     print("  1. COST SAVINGS")
@@ -390,25 +389,25 @@ def main():
     print("║        PHI-ENHANCED RLM: VALIDATION & VALUE DEMONSTRATION                    ║")
     print("╚══════════════════════════════════════════════════════════════════════════════╝")
     print()
-    
+
     # Step 1: Explain the system
     explain_system()
-    
+
     # Step 2: Validate components
     results = validate_components()
-    
+
     if not all(results.values()):
         print("\n⚠️  Some components failed validation. Fix issues before proceeding.")
         return
-    
+
     input("\nPress Enter to run the value demonstration (will make API calls)...\n")
-    
+
     # Step 3: Demonstrate value
     demonstrate_value()
-    
+
     # Step 4: Show metrics
     compute_value_metrics()
-    
+
     print("=" * 80)
     print("CONCLUSION")
     print("=" * 80)

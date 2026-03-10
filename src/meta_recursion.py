@@ -24,8 +24,8 @@ from typing import List, Dict, Optional, Any
 
 import numpy as np
 
-from phi_separation_novel_mathematics import PHI, PHI_INV, CASIMIR_DEGREES
-from phi_enhanced_rlm import PhiEnhancedRLM, SubCallResult
+from .phi_separation_novel_mathematics import PHI, PHI_INV, CASIMIR_DEGREES
+from .phi_enhanced_rlm import PhiEnhancedRLM, SubCallResult
 
 logger = logging.getLogger(__name__)
 

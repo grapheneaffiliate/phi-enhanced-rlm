@@ -16,7 +16,6 @@ if sys.platform == 'win32':
 
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
-sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 """
 GITHUB/URL REPOSITORY ANALYZER
@@ -42,7 +41,6 @@ import re
 import html
 from pathlib import Path
 from typing import List, Dict, Any, Optional
-from urllib.parse import urlparse
 import urllib.request
 
 
@@ -54,28 +52,28 @@ def html_to_text(html_content: str) -> str:
     text = re.sub(r'<head[^>]*>.*?</head>', '', text, flags=re.DOTALL | re.IGNORECASE)
     text = re.sub(r'<nav[^>]*>.*?</nav>', '', text, flags=re.DOTALL | re.IGNORECASE)
     text = re.sub(r'<footer[^>]*>.*?</footer>', '', text, flags=re.DOTALL | re.IGNORECASE)
-    
+
     # Replace common block elements with newlines
     text = re.sub(r'<(p|div|h[1-6]|li|tr|br)[^>]*>', '\n', text, flags=re.IGNORECASE)
     text = re.sub(r'</(p|div|h[1-6]|li|tr)>', '\n', text, flags=re.IGNORECASE)
-    
+
     # Remove remaining HTML tags
     text = re.sub(r'<[^>]+>', '', text)
-    
+
     # Decode HTML entities
     text = html.unescape(text)
-    
+
     # Clean up whitespace
     text = re.sub(r'\n\s*\n', '\n\n', text)
     text = re.sub(r' +', ' ', text)
     text = '\n'.join(line.strip() for line in text.split('\n'))
     text = re.sub(r'\n{3,}', '\n\n', text)
-    
+
     return text.strip()
 
 # PHI-Enhanced RLM imports
-from openrouter_backend import OpenRouterBackend
-from phi_enhanced_rlm import PhiEnhancedRLM
+from src.openrouter_backend import OpenRouterBackend
+from src.phi_enhanced_rlm import PhiEnhancedRLM
 
 # =============================================================================
 # CONSTANTS
@@ -115,7 +113,7 @@ MAX_TOTAL_SIZE = 500_000  # 500KB total context
 
 class ContentFetcher:
     """Base class for content fetchers."""
-    
+
     def fetch(self, source: str) -> Dict[str, str]:
         """Fetch content and return dict of {path: content}."""
         raise NotImplementedError
@@ -123,12 +121,12 @@ class ContentFetcher:
 
 class GitHubFetcher(ContentFetcher):
     """Fetch content from GitHub repositories."""
-    
+
     def __init__(self, temp_dir: Optional[str] = None, keep_repo: bool = False):
         self.temp_dir = temp_dir or tempfile.mkdtemp(prefix="repo_analyzer_")
         self.keep_repo = keep_repo
         self.clone_path = None
-    
+
     def fetch(self, source: str) -> Dict[str, str]:
         """Clone repo and extract relevant files."""
         # Parse GitHub URL or owner/repo format
@@ -142,11 +140,11 @@ class GitHubFetcher(ContentFetcher):
             repo_name = source.split("/")[1]
         else:
             raise ValueError(f"Invalid GitHub source: {source}")
-        
+
         # Clone repository
         clone_path = os.path.join(self.temp_dir, repo_name)
         print(f"  Cloning {repo_url}...")
-        
+
         try:
             result = subprocess.run(
                 ["git", "clone", "--depth", "1", repo_url, clone_path],
@@ -158,24 +156,24 @@ class GitHubFetcher(ContentFetcher):
             raise RuntimeError("Git clone timed out")
         except FileNotFoundError:
             raise RuntimeError("Git not found. Please install git.")
-        
+
         # Extract files
         return self._extract_files(clone_path)
-    
+
     def _extract_files(self, path: str) -> Dict[str, str]:
         """Extract relevant files from directory."""
         files = {}
         total_size = 0
-        
+
         for root, dirs, filenames in os.walk(path):
             # Skip unwanted directories
             dirs[:] = [d for d in dirs if d not in SKIP_DIRS]
-            
+
             for filename in filenames:
                 filepath = os.path.join(root, filename)
                 relpath = os.path.relpath(filepath, path)
                 ext = Path(filename).suffix.lower()
-                
+
                 # Check if file should be included
                 if filename in IMPORTANT_FILES or ext in CODE_EXTENSIONS:
                     try:
@@ -184,16 +182,16 @@ class GitHubFetcher(ContentFetcher):
                             continue
                         if total_size + size > MAX_TOTAL_SIZE:
                             continue
-                        
+
                         with open(filepath, 'r', encoding='utf-8', errors='ignore') as f:
                             content = f.read()
                             files[relpath] = content
                             total_size += size
                     except Exception:
                         continue
-        
+
         return files
-    
+
     def cleanup(self):
         """Remove temporary directory."""
         if self.temp_dir and os.path.exists(self.temp_dir):
@@ -202,11 +200,11 @@ class GitHubFetcher(ContentFetcher):
 
 class URLFetcher(ContentFetcher):
     """Fetch content from URLs."""
-    
+
     def fetch(self, source: str) -> Dict[str, str]:
         """Download content from URL."""
         print(f"  Fetching {source}...")
-        
+
         try:
             req = urllib.request.Request(
                 source,
@@ -214,7 +212,7 @@ class URLFetcher(ContentFetcher):
             )
             with urllib.request.urlopen(req, timeout=30) as response:
                 raw_content = response.read().decode('utf-8', errors='ignore')
-                
+
                 # Extract text from HTML
                 content_type = response.headers.get('Content-Type', '')
                 if 'html' in content_type.lower() or raw_content.strip().startswith('<!'):
@@ -222,11 +220,11 @@ class URLFetcher(ContentFetcher):
                     print(f"  [OK] Extracted {len(content)} chars of text from HTML")
                 else:
                     content = raw_content
-                
+
                 # Truncate if too large
                 if len(content) > MAX_TOTAL_SIZE:
                     content = content[:MAX_TOTAL_SIZE] + "\n[... truncated ...]"
-                
+
                 return {"content": content}
         except Exception as e:
             raise RuntimeError(f"Failed to fetch URL: {e}")
@@ -234,11 +232,11 @@ class URLFetcher(ContentFetcher):
 
 class LocalFetcher(ContentFetcher):
     """Fetch content from local files/directories."""
-    
+
     def fetch(self, source: str) -> Dict[str, str]:
         """Read local files."""
         path = Path(source)
-        
+
         if path.is_file():
             with open(path, 'r', encoding='utf-8', errors='ignore') as f:
                 return {str(path.name): f.read()[:MAX_FILE_SIZE]}
@@ -246,33 +244,33 @@ class LocalFetcher(ContentFetcher):
             return self._extract_dir(path)
         else:
             raise ValueError(f"Path not found: {source}")
-    
+
     def _extract_dir(self, path: Path) -> Dict[str, str]:
         """Extract files from directory."""
         files = {}
         total_size = 0
-        
+
         for item in path.rglob("*"):
             if item.is_file():
                 relpath = str(item.relative_to(path))
-                
+
                 # Skip unwanted dirs
                 if any(skip in relpath for skip in SKIP_DIRS):
                     continue
-                
+
                 ext = item.suffix.lower()
                 if item.name in IMPORTANT_FILES or ext in CODE_EXTENSIONS:
                     try:
                         size = item.stat().st_size
                         if size > MAX_FILE_SIZE or total_size + size > MAX_TOTAL_SIZE:
                             continue
-                        
+
                         content = item.read_text(encoding='utf-8', errors='ignore')
                         files[relpath] = content
                         total_size += size
                     except Exception:
                         continue
-        
+
         return files
 
 
@@ -282,11 +280,11 @@ class LocalFetcher(ContentFetcher):
 
 class RepoAnalyzer:
     """Main analyzer using PHI-Enhanced RLM."""
-    
+
     def __init__(self, backend: OpenRouterBackend, verbose: bool = True):
         self.backend = backend
         self.verbose = verbose
-    
+
     def analyze(self, source: str, query: str, max_depth: int = 3) -> Dict[str, Any]:
         """
         Analyze content from source with given query.
@@ -304,24 +302,24 @@ class RepoAnalyzer:
             print("REPO/URL ANALYZER (PHI-Enhanced RLM)")
             print("=" * 70)
             print()
-        
+
         # Determine source type and fetch content
         if self.verbose:
             print(f"Source: {source}")
             print(f"Query: {query}")
             print()
             print("Fetching content...")
-        
+
         fetcher = self._get_fetcher(source)
         try:
             files = fetcher.fetch(source)
         finally:
             if hasattr(fetcher, 'cleanup'):
                 fetcher.cleanup()
-        
+
         if not files:
             return {"error": "No analyzable content found"}
-        
+
         if self.verbose:
             print(f"  [OK] Extracted {len(files)} files")
             for name in list(files.keys())[:10]:
@@ -329,29 +327,29 @@ class RepoAnalyzer:
             if len(files) > 10:
                 print(f"    ... and {len(files) - 10} more")
             print()
-        
+
         # Create context chunks from files
         chunks = self._create_chunks(files)
-        
+
         if self.verbose:
             print(f"  [OK] Created {len(chunks)} context chunks")
             print()
-        
+
         # Initialize RLM
         if self.verbose:
             print("Running PHI-Enhanced RLM analysis...")
             print()
-        
+
         rlm = PhiEnhancedRLM(
             base_llm_callable=self.backend,
             context_chunks=chunks,
             total_budget_tokens=4096,
             trace_file="analyzer_trace.jsonl"
         )
-        
+
         # Run analysis
         result = rlm.recursive_solve(query, max_depth=max_depth)
-        
+
         # Build response
         response = {
             "source": source,
@@ -362,7 +360,7 @@ class RepoAnalyzer:
             "files_analyzed": len(files),
             "chunks_used": len(chunks)
         }
-        
+
         if self.verbose:
             print("=" * 70)
             print("ANALYSIS RESULT")
@@ -374,9 +372,9 @@ class RepoAnalyzer:
             print(f"Files analyzed: {len(files)}")
             print(f"Chunks created: {len(chunks)}")
             print()
-        
+
         return response
-    
+
     def _get_fetcher(self, source: str) -> ContentFetcher:
         """Get appropriate fetcher for source."""
         if source.startswith("https://github.com/") or \
@@ -386,31 +384,31 @@ class RepoAnalyzer:
             return URLFetcher()
         else:
             return LocalFetcher()
-    
+
     def _create_chunks(self, files: Dict[str, str]) -> List[str]:
         """Create context chunks from files."""
         chunks = []
-        
+
         # Add file structure overview
         structure = "Repository structure:\n" + "\n".join(f"- {name}" for name in sorted(files.keys()))
         chunks.append(structure[:2000])
-        
+
         # Add important files first
         for name in IMPORTANT_FILES:
             for filepath, content in files.items():
                 if filepath.endswith(name) or filepath == name:
                     chunk = f"=== {filepath} ===\n{content[:3000]}"
                     chunks.append(chunk)
-        
+
         # Add other files
         for filepath, content in files.items():
             if not any(filepath.endswith(imp) for imp in IMPORTANT_FILES):
                 chunk = f"=== {filepath} ===\n{content[:2000]}"
                 chunks.append(chunk)
-                
+
                 if len(chunks) >= 20:  # Limit chunks
                     break
-        
+
         return chunks
 
 
@@ -437,9 +435,9 @@ Examples:
     parser.add_argument("--depth", type=int, default=3, help="RLM recursion depth (default: 3)")
     parser.add_argument("--output", "-o", type=str, help="Save output to JSON file")
     parser.add_argument("--quiet", "-q", action="store_true", help="Minimal output")
-    
+
     args = parser.parse_args()
-    
+
     # Initialize backend
     try:
         backend = OpenRouterBackend()
@@ -447,26 +445,26 @@ Examples:
         print(f"[FAIL] Failed to initialize backend: {e}")
         print("Make sure .env contains OPENROUTER_API_KEY")
         return 1
-    
+
     # Run analysis
     analyzer = RepoAnalyzer(backend, verbose=not args.quiet)
-    
+
     try:
         result = analyzer.analyze(args.source, args.query, max_depth=args.depth)
     except Exception as e:
         print(f"[FAIL] Analysis failed: {e}")
         return 1
-    
+
     # Save output if requested
     if args.output:
         with open(args.output, 'w', encoding='utf-8') as f:
             json.dump(result, f, indent=2)
         print(f"[OK] Output saved to {args.output}")
-    
+
     # Print for quiet mode
     if args.quiet and "answer" in result:
         print(result["answer"])
-    
+
     return 0
 
 
