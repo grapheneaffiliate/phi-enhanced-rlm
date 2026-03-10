@@ -16,7 +16,6 @@ Custom tools can be registered via ToolRegistry.register().
 """
 
 import subprocess
-import json
 import logging
 from typing import Dict, List, Optional, Callable, Any
 from dataclasses import dataclass, field
