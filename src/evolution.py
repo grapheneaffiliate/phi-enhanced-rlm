@@ -67,6 +67,10 @@ class EvolutionState:
     last_evolved: str = ""
     # Fitness score of current configuration
     fitness: float = 0.0
+    # Agent performance tracking (agent_name -> accuracy score)
+    agent_performance: Dict[str, float] = field(default_factory=dict)
+    # Depth-to-agent mapping overrides (depth_str -> agent_name)
+    depth_agent_overrides: Dict[str, str] = field(default_factory=dict)
 
     def to_dict(self) -> Dict[str, Any]:
         return asdict(self)
@@ -248,6 +252,9 @@ class PhiEvolutionEngine:
         # 5. Evolve pruning ratio
         self._mutate_pruning_ratio(evaluation, lr)
 
+        # 6. Evolve agent assignments (if agent performance data available)
+        self._mutate_agent_assignments(evaluation.depth_accuracy, lr)
+
         # Update history and generation
         self.state.accuracy_history.append(evaluation.accuracy)
         self.state.token_history.append(evaluation.avg_tokens)
@@ -346,6 +353,41 @@ class PhiEvolutionEngine:
             # Not accurate enough — prune less
             self.state.pruning_ratio = min(0.9, self.state.pruning_ratio + lr * 0.05)
 
+    def _mutate_agent_assignments(self, depth_accuracy: Dict[str, float],
+                                    lr: float):
+        """Track agent performance per depth for agent assignment evolution.
+
+        Updates agent_performance scores using EMA with phi-scaled learning
+        rate. If a depth consistently underperforms, the evolution engine
+        can flag it for agent reassignment.
+        """
+        if not depth_accuracy:
+            return
+
+        # Import agent mapping to track which agent was at each depth
+        try:
+            from .agent_router import DEPTH_AGENT_MAP
+        except ImportError:
+            return
+
+        for depth_str, acc in depth_accuracy.items():
+            try:
+                depth = int(depth_str)
+                # Check for overrides first, then default map
+                agent_name = self.state.depth_agent_overrides.get(
+                    depth_str,
+                    DEPTH_AGENT_MAP.get(depth, "unknown")
+                )
+                if agent_name in self.state.agent_performance:
+                    current = self.state.agent_performance[agent_name]
+                    self.state.agent_performance[agent_name] = (
+                        (1 - lr) * current + lr * acc
+                    )
+                else:
+                    self.state.agent_performance[agent_name] = acc
+            except (ValueError, IndexError):
+                pass
+
     def get_best_chunk_strategy(self) -> str:
         """Return the highest-scoring chunk selection strategy."""
         scores = self.state.chunk_strategy_scores
@@ -365,4 +407,5 @@ class PhiEvolutionEngine:
             "best_strategy": self.get_best_chunk_strategy(),
             "accuracy_trend": self.state.accuracy_history[-10:],
             "token_trend": self.state.token_history[-10:],
+            "agent_performance": self.state.agent_performance,
         }

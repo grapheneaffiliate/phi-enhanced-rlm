@@ -103,6 +103,19 @@ STRATEGIES: Dict[str, RecursionStrategy] = {
         description="Quick, focused factual lookup with minimal recursion. "
                      "Best for straightforward factual questions.",
     ),
+    "deep_research": RecursionStrategy(
+        name="deep_research",
+        max_depth=7,
+        budget_distribution="casimir",
+        chunk_strategy="diversity",
+        branch_factor=3,
+        phi_attention=True,
+        sparse_pruning=True,
+        description="Deep research pipeline using the full E8 Casimir hierarchy "
+                     "with agent-specialized depths: clarify -> brief -> plan -> "
+                     "parallel research -> synthesize -> verify -> report. "
+                     "Maps to claude-code-templates deep-research-team agents.",
+    ),
 }
 
 
@@ -118,6 +131,9 @@ QUERY_TYPE_KEYWORDS = {
                   "what if", "brainstorm"],
     "exploratory": ["explore", "discuss", "overview", "summary",
                      "broad", "perspectives", "opinions"],
+    "research": ["research", "investigate", "study", "analyze in depth",
+                  "examine", "review", "survey", "assess thoroughly",
+                  "evaluate comprehensively", "compare and contrast"],
 }
 
 # Strategy mapping for query types
@@ -127,6 +143,7 @@ QUERY_TYPE_STRATEGY = {
     "mathematical": "deep_analytical",
     "creative": "wide_exploratory",
     "exploratory": "wide_exploratory",
+    "research": "deep_research",
     "unknown": "spiral_convergent",
 }
 
