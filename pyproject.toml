@@ -43,6 +43,7 @@ full = [
     "trafilatura>=1.6.0",
     "tree-sitter>=0.20.0",
     "colorama>=0.4.0",
+    "httpx>=0.25.0",
 ]
 dev = [
     "pytest>=7.0.0",
