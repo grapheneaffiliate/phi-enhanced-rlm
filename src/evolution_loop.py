@@ -23,6 +23,7 @@ from .evolution import PhiEvolutionEngine, EvolutionState, EvaluationResult
 from .phi_enhanced_rlm import PhiEnhancedRLM, MockLLMBackend
 from .phi_separation_novel_mathematics import PHI
 from .session_memory import SessionMemory
+from .outcome_tracker import OutcomeTracker
 
 logger = logging.getLogger(__name__)
 
@@ -131,6 +132,7 @@ def run_evolution(generations: int = 10,
     ground_truth = [q.get("expected_answer", "") for q in questions]
     evaluations = []
     session_mem = SessionMemory(path="sessions/")
+    outcome_tracker = OutcomeTracker()
 
     if verbose:
         print(f"\n{'='*60}")
@@ -180,6 +182,14 @@ def run_evolution(generations: int = 10,
 
         # Evaluate
         evaluation = engine.evaluate_generation(traces, ground_truth)
+
+        # Blend outcome tracker fitness if real feedback exists
+        outcome_fitness = outcome_tracker.get_fitness_signal()
+        if outcome_tracker.total_outcomes > 0:
+            # Weighted blend: benchmark accuracy + real-world feedback
+            blended = (PHI * evaluation.accuracy + outcome_fitness) / (PHI + 1)
+            evaluation.accuracy = blended
+
         evaluations.append(evaluation)
 
         # Evolve

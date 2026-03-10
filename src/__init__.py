@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 """
-PHI-Enhanced RLM Core Library -- v4.0.0
+PHI-Enhanced RLM Core Library -- v4.1.0
 
-Self-evolving recursive language model with phi-geometric mathematics
-and multi-agent integration via claude-code-templates.
+Self-evolving recursive language model with phi-geometric mathematics,
+multi-agent integration, tool execution, and adversarial self-evaluation.
 """
 
 from .phi_enhanced_rlm import PhiEnhancedRLM, ContextChunk, SubCallResult, LLMResponse
@@ -36,6 +36,12 @@ from .streaming import ReasoningEvent, recursive_solve_stream
 from .agent_router import AgentRouter, DEPTH_AGENT_MAP
 from .skill_loader import SkillLoader
 
+# Autonomy modules (v4.1)
+from .tool_executor import ToolRegistry, ToolResult
+from .outcome_tracker import OutcomeTracker
+from .phi_critic import PhiCritic, CritiqueResult
+from .phi_planner import PhiPlanner, ExecutionPlan
+
 # Vector store (optional - requires chromadb)
 try:
     from .vector_store import VectorStore, RLMPipeline, Document, QueryResult  # noqa: F401
@@ -43,7 +49,7 @@ try:
 except ImportError:
     VECTOR_STORE_AVAILABLE = False
 
-__version__ = "4.0.0"
+__version__ = "4.1.0"
 __all__ = [
     # Core RLM
     "PhiEnhancedRLM",
@@ -102,4 +108,12 @@ __all__ = [
     "AgentRouter",
     "DEPTH_AGENT_MAP",
     "SkillLoader",
+    # Autonomy (v4.1)
+    "ToolRegistry",
+    "ToolResult",
+    "OutcomeTracker",
+    "PhiCritic",
+    "CritiqueResult",
+    "PhiPlanner",
+    "ExecutionPlan",
 ]

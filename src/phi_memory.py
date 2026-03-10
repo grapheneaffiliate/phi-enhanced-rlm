@@ -139,7 +139,7 @@ class PhiSpiralMemory:
         key = self._compute_key(text)
         now = time.time()
 
-        # If memory already exists, update it
+        # If memory already exists (exact match), update it
         if key in self.memories:
             existing = self.memories[key]
             existing.access_count += 1
@@ -149,6 +149,26 @@ class PhiSpiralMemory:
             existing.importance = max(existing.importance, importance)
             self._save()
             return key
+
+        # Semantic dedup: check for semantically similar existing memories
+        if embedding is not None and len(self.memories) > 0:
+            emb_array = np.array(embedding) if not isinstance(embedding, np.ndarray) else embedding
+            norm_new = np.linalg.norm(emb_array)
+            if norm_new > 1e-10:
+                for existing_key, existing_mem in self.memories.items():
+                    if existing_mem.embedding is not None:
+                        existing_emb = np.array(existing_mem.embedding)
+                        norm_existing = np.linalg.norm(existing_emb)
+                        if norm_existing > 1e-10:
+                            sim = float(np.dot(emb_array, existing_emb) / (norm_new * norm_existing))
+                            if sim > self.consolidation_threshold:
+                                # Merge into existing rather than creating duplicate
+                                existing_mem.access_count += 1
+                                existing_mem.last_accessed = now
+                                existing_mem.importance = max(existing_mem.importance, importance)
+                                existing_mem.radius *= PHI_INV  # Promote
+                                self._save()
+                                return existing_key
 
         # Create new memory
         emb_list = embedding.tolist() if embedding is not None else None

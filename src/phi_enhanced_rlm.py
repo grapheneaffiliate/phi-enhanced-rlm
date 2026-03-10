@@ -330,6 +330,12 @@ class PhiEnhancedRLM:
         self._agent_router = None
         self._skill_loader = None
 
+        # Tool executor for agentic capability (v4.1)
+        self._tool_registry = None
+
+        # Semantic info flow tracking (v4.1)
+        self._prev_embeddings = []
+
         # Clear trace file
         self.trace_file.write_text("")
 
@@ -394,6 +400,41 @@ class PhiEnhancedRLM:
             except ImportError:
                 self._skill_loader = False
         return self._skill_loader if self._skill_loader is not False else None
+
+    def _get_tool_registry(self):
+        """Lazy-load tool registry for agentic capability."""
+        if self._tool_registry is None:
+            try:
+                from .tool_executor import ToolRegistry
+                self._tool_registry = ToolRegistry()
+            except ImportError:
+                self._tool_registry = False
+        return self._tool_registry if self._tool_registry is not False else None
+
+    def set_tool_registry(self, registry):
+        """Set a custom tool registry (e.g., with code execution enabled)."""
+        self._tool_registry = registry
+
+    def compute_semantic_info_units(self, answer_embedding: np.ndarray) -> float:
+        """Measure info gain as cosine distance from previous answer embeddings.
+
+        Complements token-based info flow with semantic novelty detection.
+        Two answers with different words but same meaning register as low info.
+        Two answers with same words but different meaning register as high info.
+        """
+        if len(self._prev_embeddings) == 0:
+            self._prev_embeddings.append(answer_embedding)
+            return 1.0
+
+        centroid = np.mean(self._prev_embeddings, axis=0)
+        norm_a = np.linalg.norm(answer_embedding)
+        norm_c = np.linalg.norm(centroid)
+        if norm_a < 1e-10 or norm_c < 1e-10:
+            return 0.0
+        cos_sim = float(np.dot(answer_embedding, centroid) / (norm_a * norm_c))
+        dist = 1.0 - cos_sim
+        self._prev_embeddings.append(answer_embedding)
+        return max(0.0, dist)
 
     # =========================================================================
     # STEP 2: Query-Conditioned Chunk Selection (Relevance -> Diversity)
@@ -606,6 +647,15 @@ class PhiEnhancedRLM:
             f"{fc_prefix}Check for missing steps in: {answer[:200]}... Context: {context[:100]}",
             f"{fc_prefix}Provide counterexample if wrong: {answer[:200]}... Context: {context[:100]}"
         ]
+
+        # Inject phi-attention into QEC verifier prompts (Finding 3 fix)
+        phi_attn = self._get_phi_attention()
+        if phi_attn and (self.evolution_state is None or
+                         getattr(self.evolution_state, 'phi_attention_enabled', True)):
+            verifier_prompts = [
+                phi_attn.build_phi_prompt(p, "", 5, budget // 3)
+                for p in verifier_prompts
+            ]
 
         results = []
         for i, prompt in enumerate(verifier_prompts):
@@ -955,6 +1005,25 @@ Respond in JSON format:
         print("=" * 60)
 
     # =========================================================================
+    # STREAMING BRIDGE (Finding 8 fix)
+    # =========================================================================
+
+    def recursive_solve_stream(self, query: str, depth: int = 0,
+                               path: tuple = (),
+                               max_depth: int = 5):
+        """Generator version of recursive_solve -- yields ReasoningEvent at each step.
+
+        Delegates to the streaming module's implementation, which mirrors
+        recursive_solve but yields events at each step for real-time observation.
+
+        Usage:
+            for event in rlm.recursive_solve_stream("question"):
+                print(f"[{event.type}] depth={event.depth}")
+        """
+        from .streaming import recursive_solve_stream
+        return recursive_solve_stream(self, query, depth, path, max_depth)
+
+    # =========================================================================
     # STEP 1: MAIN RECURSIVE SOLVE ENGINE
     # =========================================================================
 
@@ -1040,6 +1109,11 @@ Respond in JSON format:
             if relevant_skills:
                 prompt += f"\n\n[Relevant Skill]:\n{relevant_skills[0]}"
 
+        # Inject tool descriptions if tools are available
+        tool_registry = self._get_tool_registry()
+        if tool_registry and tool_registry.list_tools():
+            prompt += f"\n\n{tool_registry.get_tool_descriptions()}"
+
         # Step 3: Call LLM backend
         try:
             response_str = self.llm(prompt, max_tokens=budget)
@@ -1052,6 +1126,21 @@ Respond in JSON format:
             raw_confidence = 0.3
             subquestions = []
 
+        # Handle tool calls from LLM response
+        tool_call = response.get("tool_call") if isinstance(response, dict) else None
+        if tool_call and tool_registry:
+            tool_name = tool_call.get("name", "")
+            tool_params = tool_call.get("params", {})
+            tool_cost = tool_registry.get_budget_cost(tool_name)
+            if tool_cost <= budget:
+                tool_result = tool_registry.execute(tool_name, tool_params)
+                if tool_result.success:
+                    answer = (f"{answer}\n\n"
+                              f"[Tool Output ({tool_result.tool_name})]:\n"
+                              f"{tool_result.output}")
+                else:
+                    logger.warning(f"Tool {tool_name} failed: {tool_result.error}")
+
         # Step 4: QEC verification
         revised_conf, verifier_results = self.run_qec_verification(answer, selected_text, budget // 2)
         confidence = (raw_confidence + revised_conf) / 2
@@ -1059,9 +1148,16 @@ Respond in JSON format:
         # Update confidence history
         self.confidence_history.append(confidence)
 
-        # Step 4: Update spectral flow
+        # Step 4: Update spectral flow (token-based + semantic)
         answer_tokens = simple_tokenize(answer)
         new_info = self.compute_info_units(answer_tokens)
+        # Supplement with semantic info flow when embeddings available
+        try:
+            answer_emb = get_embedding(answer[:500], self.embedder)
+            semantic_info = self.compute_semantic_info_units(answer_emb)
+            new_info = (new_info + semantic_info) / 2  # Hybrid metric
+        except Exception:
+            pass  # Fall back to token-only info flow
         self.update_information_state(new_info)
 
         # Determine stop reason

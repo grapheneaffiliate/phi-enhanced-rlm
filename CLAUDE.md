@@ -19,6 +19,11 @@ and attention patterns.
 - `src/phi_sparse_reasoning.py` -- phi-ratio branch pruning
 - `src/embeddings.py` -- Multi-provider embedding system
 - `src/vector_store.py` -- ChromaDB vector store integration
+- `src/tool_executor.py` -- Tool registry for agentic capability (v4.1)
+- `src/outcome_tracker.py` -- Real-world feedback for evolution fitness (v4.1)
+- `src/phi_critic.py` -- Adversarial self-evaluation (v4.1)
+- `src/phi_planner.py` -- DAG-based task decomposition (v4.1)
+- `src/mcp_server.py` -- MCP server for Claude Code integration (v4.1)
 
 ## Architecture
 
@@ -56,6 +61,7 @@ Each depth uses a different specialist agent persona:
 - `spiral_convergent` -- Balanced phi-enhanced (max_depth=5)
 - `quick_factual` -- Minimal recursion lookup (max_depth=2)
 - `deep_research` -- Full E8 hierarchy with agent specialization (max_depth=7)
+- `planned` -- Pre-planned DAG execution with dependency-ordered steps (max_depth=4)
 
 ## Conventions
 
@@ -63,7 +69,7 @@ Each depth uses a different specialist agent persona:
 - phi = 1.618033988749895, epsilon = 28/248 (torsion correction)
 - Tests: `python -m pytest tests/ -v`
 - Evolution: `python -m src.evolution_loop --generations 10`
-- Version: 4.0.0
+- Version: 4.1.0
 
 ## Development
 
