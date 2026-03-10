@@ -1,94 +1,135 @@
 # PHI-Enhanced Recursive Language Model (RLM)
 
-**A recursive reasoning framework that decomposes complex questions into confidence-weighted sub-analyses using φ-Separation Mathematics.**
+**A self-evolving recursive reasoning framework using golden ratio (phi) mathematics and E8 Lie group geometry for multi-agent AI problem solving.**
 
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.18377963.svg)](https://doi.org/10.5281/zenodo.18377963)
 
 ---
 
-## 🎯 What is RLM?
+## What is RLM?
 
-RLM takes a complex question and recursively breaks it down into simpler sub-questions, solving each with tracked confidence scores, then synthesizes a final answer. Think of it as **"thinking step-by-step, but mathematically rigorous."**
+RLM takes a complex question and recursively breaks it down into simpler sub-questions, routing each to a depth-specialized agent, solving with tracked confidence scores, then synthesizing a final answer. All governed by the golden ratio and E8 Casimir degrees.
 
 ```
 Question: "How does React compare to Vue?"
-    ├── Sub-Q: "What is React's architecture?" (conf: 0.85)
-    ├── Sub-Q: "What is Vue's architecture?" (conf: 0.82)  
-    ├── Sub-Q: "Performance differences?" (conf: 0.78)
-    └── Synthesis → Final answer (conf: 0.81)
+    |-- [research-orchestrator] Route and plan (Casimir 2)
+    |-- [query-clarifier] Refine sub-questions (Casimir 8)
+    |-- [research-analyst] Architecture comparison (Casimir 12, conf: 0.85)
+    |-- [fact-checker] QEC verification (Casimir 20)
+    +-- [research-synthesizer] Final synthesis (conf: 0.81)
 ```
 
 ---
 
-## ✨ Key Features
+## Key Features
 
 | Feature | Description |
 |---------|-------------|
-| 🔄 **Recursive Decomposition** | Breaks complex queries into tractable sub-problems |
-| 📊 **Confidence Tracking** | Every answer includes a calibrated confidence score |
-| 📄 **Document Analysis** | Analyze PDFs, Word docs, web pages, GitHub repos |
-| 🗄️ **Vector Store** | ChromaDB-backed RAG for large document collections |
-| 💾 **Embedding Cache** | SQLite cache persists across sessions |
-| ⚡ **Parallel Processing** | Sub-questions processed concurrently |
-| 🔌 **REST API** | FastAPI server with OpenAPI docs |
-| 💬 **Interactive Chat** | Rich terminal UI with streaming |
-| 🔄 **Comparison Mode** | Compare repos, URLs, or documents side-by-side |
+| Recursive Decomposition | Breaks complex queries into tractable sub-problems |
+| Multi-Agent Architecture | 8 specialized agents mapped to E8 Casimir degrees |
+| Self-Evolution | Phi-scaled learning rate adapts parameters over generations |
+| Confidence Tracking | Every answer includes a calibrated confidence score |
+| QEC Verification | 3 independent checks (contradiction, completeness, counterexample) |
+| Adversarial Critic | Self-evaluation with phi-geometric scoring (v4.1) |
+| DAG Task Planner | Dependency-ordered task decomposition (v4.1) |
+| Tool Executor | Agentic tool registry for external actions (v4.1) |
+| Outcome Tracker | Real-world feedback for evolution fitness (v4.1) |
+| MCP Server | Claude Code integration via Model Context Protocol (v4.1) |
+| Workflow Orchestrator | 8-phase superpowers pipeline with safety gates (v4.1) |
+| Document Analysis | Analyze PDFs, Word docs, web pages, GitHub repos |
+| Vector Store | ChromaDB-backed RAG for large document collections |
+| Embedding Cache | SQLite cache persists across sessions |
+| Parallel Processing | Sub-questions processed concurrently |
+| REST API | FastAPI server with OpenAPI docs |
+| Interactive Chat | Rich terminal UI with streaming |
 
 ---
 
-## 🚀 Quick Start
+## Quick Start
 
 ```bash
 git clone https://github.com/grapheneaffiliate/phi-enhanced-rlm.git
 cd phi-enhanced-rlm
-pip install -r requirements.txt
-cp .env.template .env  # Add OPENROUTER_API_KEY
+bash setup.sh
 
 # Interactive chat
 python cli/chat.py
 
 # REST API
-python api/server.py  # http://localhost:8000/docs
+python -m uvicorn api.server:app --reload --port 8000
+
+# Self-evolution
+python -m src.evolution_loop --generations 10
 ```
 
 ---
 
-## 🧮 Mathematical Foundation
+## Mathematical Foundation
 
-RLM is grounded in **φ-Separation Mathematics**, using:
+RLM is grounded in phi-Separation Mathematics, using:
 
-- **φ-Separation Kernel**: `K(x, y) = φ^(-||x - y||/δ)` for semantic similarity
-- **E8 Casimir Budget**: Optimal token allocation across recursion depths
-- **QEC Threshold**: `p_φ ≈ 0.191` for confidence calibration
+- **phi-Gram Kernel**: `K(x, y) = phi^(-||x - y||/delta)` for semantic similarity
+- **E8 Casimir Budget**: Optimal token allocation across 8 recursion depths via `[2, 8, 12, 14, 18, 20, 24, 30]`
+- **QEC Threshold**: `p_phi = (1 - phi^(-1))/2 ~ 0.191` for confidence calibration
+- **Torsion Correction**: `epsilon = 28/248` preserves minority viewpoints in synthesis
+- **phi-Momentum Stopping**: `m(t+1) = phi^(-1) * m(t) + (1 - phi^(-1)) * signal(t)`
+- **Evolution Learning Rate**: `lr(n) = phi^(-n)` for diminishing adaptation
 
-The golden ratio (φ ≈ 1.618) appears throughout as a fundamental scaling constant.
+Full details in `src/phi_separation_novel_mathematics.py` -- 10 interconnected frameworks.
 
 ---
 
-## 📦 What's Included
+## Architecture (v4.1)
 
 ```
 phi-enhanced-rlm/
-├── src/           # Core library (RLM, embeddings, cache, vector store)
-├── cli/           # Interactive chat, repo analyzer, validation
-├── api/           # FastAPI REST server
-├── tests/         # Test suite
-├── docs/          # Research papers & documentation
-└── examples/      # Sample outputs
+|-- src/                       Core engine (28 modules)
+|   |-- phi_enhanced_rlm.py       Recursive engine, QEC, aggregation
+|   |-- phi_separation_novel_mathematics.py  E8/phi math foundations
+|   |-- agent_router.py           Multi-agent depth routing
+|   |-- meta_recursion.py         6 meta-strategies + auto-selection
+|   |-- workflow_orchestrator.py   8-phase superpowers pipeline
+|   |-- evolution.py               Self-evolution engine
+|   |-- phi_critic.py              Adversarial self-evaluation
+|   |-- phi_planner.py             DAG-based task decomposition
+|   |-- tool_executor.py           Agentic tool registry
+|   |-- outcome_tracker.py         Real-world feedback tracking
+|   |-- mcp_server.py              MCP server for Claude Code
+|   +-- ...                        + 17 supporting modules
+|
+|-- tests/                     Test suite (70 tests)
+|-- benchmarks/                GSM8K + ARC evaluation
+|-- cli/                       Chat, repo analyzer, validation
+|-- api/                       FastAPI REST server
++-- web/                       Documentation + evolution dashboard
 ```
 
 ---
 
-## 📖 Use Cases
+## Meta-Recursion Strategies
 
-- **Research Analysis**: Feed papers → get synthesized insights with confidence
-- **Code Review**: Analyze repositories recursively
-- **Document Comparison**: Side-by-side analysis of any two sources
-- **Knowledge Base Q&A**: Build a vector store, ask questions
+| Strategy | Max Depth | Best For |
+|----------|-----------|----------|
+| `deep_analytical` | 6 | Complex analytical questions |
+| `wide_exploratory` | 3 | Open-ended, broad questions |
+| `spiral_convergent` | 5 | General-purpose (default) |
+| `quick_factual` | 2 | Simple factual lookups |
+| `deep_research` | 7 | Full E8 hierarchy with agent specialization |
+| `planned` | 4 | Pre-planned DAG execution with dependency ordering |
 
 ---
 
-## 🔗 Links
+## Use Cases
+
+- **Research Analysis**: Feed papers, get synthesized insights with confidence
+- **Code Review**: Analyze repositories recursively with agent specialization
+- **Document Comparison**: Side-by-side analysis of any two sources
+- **Knowledge Base Q&A**: Build a vector store, ask questions
+- **Autonomous Tasks**: Tool executor enables agentic workflows (v4.1)
+
+---
+
+## Links
 
 - **GitHub**: [grapheneaffiliate/phi-enhanced-rlm](https://github.com/grapheneaffiliate/phi-enhanced-rlm)
 - **Documentation**: See README.md in repository
@@ -96,13 +137,13 @@ phi-enhanced-rlm/
 
 ---
 
-## 📄 Citation
+## Citation
 
 ```bibtex
 @software{rlm2026,
   author       = {McGirl, Tim},
   title        = {PHI-Enhanced Recursive Language Model},
-  version      = {v2.1.0},
+  version      = {v4.1.0},
   year         = {2026},
   publisher    = {Zenodo},
   doi          = {10.5281/zenodo.18377963},
@@ -112,4 +153,4 @@ phi-enhanced-rlm/
 
 ---
 
-*"Recursive reasoning with mathematical rigor."*
+*"The universe may be built on the geometry of E8, with the golden ratio as its fundamental scaling constant."*
