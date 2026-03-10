@@ -37,8 +37,8 @@ import time
 results = {"passed": 0, "failed": 0, "skipped": 0}
 
 
-def test(name):
-    """Decorator for test functions."""
+def _test_decorator(name):
+    """Decorator for test functions (prefixed with _ to avoid pytest collection)."""
     def decorator(func):
         def wrapper():
             print(f"\n{'='*60}")
@@ -48,18 +48,15 @@ def test(name):
                 func()
                 print(f"[PASS] {name}")
                 results["passed"] += 1
-                return True
             except ImportError as e:
                 print(f"[SKIP] {name} (missing dependency: {e})")
                 results["skipped"] += 1
-                return None
             except Exception as e:
                 print(f"[FAIL] {name}")
                 print(f"   Error: {e}")
                 import traceback
                 traceback.print_exc()
                 results["failed"] += 1
-                return False
         return wrapper
     return decorator
 
@@ -68,7 +65,7 @@ def test(name):
 # 1. SQLITE CACHE TESTS
 # =============================================================================
 
-@test("SQLite Embedding Cache")
+@_test_decorator("SQLite Embedding Cache")
 def test_sqlite_cache():
     from cache import SQLiteEmbeddingCache
     import numpy as np
@@ -120,7 +117,7 @@ def test_sqlite_cache():
 # 2. EXTRACTOR TESTS
 # =============================================================================
 
-@test("Web Content Extraction")
+@_test_decorator("Web Content Extraction")
 def test_web_extraction():
     from extractors import extract_web_content
     
@@ -149,7 +146,7 @@ def test_web_extraction():
     print(f"   Title: {result.title}")
 
 
-@test("PDF Extraction")
+@_test_decorator("PDF Extraction")
 def test_pdf_extraction():
     from extractors import extract_pdf_content
     
@@ -168,7 +165,7 @@ def test_pdf_extraction():
     print(f"   Text length: {len(result.text)} chars")
 
 
-@test("Code Chunking")
+@_test_decorator("Code Chunking")
 def test_code_chunking():
     from extractors import chunk_python_code, chunk_javascript_code
     
@@ -204,7 +201,7 @@ class Greeter:
 # 3. PROGRESS UTILITIES TESTS
 # =============================================================================
 
-@test("Progress Manager")
+@_test_decorator("Progress Manager")
 def test_progress():
     from progress import get_progress_manager, SimpleProgressManager
     
@@ -223,7 +220,7 @@ def test_progress():
     print(f"   Progress manager works correctly")
 
 
-@test("Confidence Visualization")
+@_test_decorator("Confidence Visualization")
 def test_confidence_viz():
     from progress import visualize_confidence_tree
     
@@ -241,7 +238,7 @@ def test_confidence_viz():
 # 4. EMBEDDINGS WITH SQLITE CACHE TESTS
 # =============================================================================
 
-@test("Embeddings with SQLite Cache")
+@_test_decorator("Embeddings with SQLite Cache")
 def test_embeddings_sqlite():
     from embeddings import EmbeddingCache
     import numpy as np
@@ -282,7 +279,7 @@ def test_embeddings_sqlite():
 # 5. PHI-ENHANCED RLM TESTS
 # =============================================================================
 
-@test("RLM Parallel Processing Setup")
+@_test_decorator("RLM Parallel Processing Setup")
 def test_rlm_parallel():
     from phi_enhanced_rlm import PhiEnhancedRLM, MockLLMBackend
     
@@ -303,7 +300,7 @@ def test_rlm_parallel():
     print("   Parallel processing can be enabled")
 
 
-@test("RLM Reasoning Tree")
+@_test_decorator("RLM Reasoning Tree")
 def test_rlm_reasoning_tree():
     from phi_enhanced_rlm import PhiEnhancedRLM, MockLLMBackend
     import tempfile
@@ -344,7 +341,7 @@ def test_rlm_reasoning_tree():
 # 6. API TESTS (structure only, no server needed)
 # =============================================================================
 
-@test("API Models")
+@_test_decorator("API Models")
 def test_api_models():
     from api import (
         AnalyzeRequest, ChatRequest, CompareRequest,
@@ -365,7 +362,7 @@ def test_api_models():
     print("   All API models validate correctly")
 
 
-@test("API State Management")
+@_test_decorator("API State Management")
 def test_api_state():
     from api import AppState
     
@@ -394,7 +391,7 @@ def test_api_state():
 # 7. INTEGRATION TEST
 # =============================================================================
 
-@test("End-to-End Integration")
+@_test_decorator("End-to-End Integration")
 def test_integration():
     from phi_enhanced_rlm import PhiEnhancedRLM, MockLLMBackend
     from progress import get_progress_manager
