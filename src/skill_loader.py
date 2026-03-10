@@ -15,6 +15,18 @@ from typing import Dict, List, Optional, Tuple
 
 logger = logging.getLogger(__name__)
 
+# Superpowers skill keyword mappings for enhanced retrieval
+SUPERPOWERS_KEYWORDS = {
+    "brainstorming": ["design", "plan", "idea", "feature", "build", "create", "spec"],
+    "writing-plans": ["implement", "plan", "steps", "tasks", "decompose", "break down"],
+    "subagent-driven-development": ["execute", "implement", "build", "code", "develop"],
+    "test-driven-development": ["test", "tdd", "verify", "assert", "coverage", "red green"],
+    "systematic-debugging": ["bug", "error", "fail", "broken", "fix", "debug", "crash"],
+    "verification-before-completion": ["done", "complete", "verify", "check", "confirm", "ship"],
+    "dispatching-parallel-agents": ["parallel", "concurrent", "multiple", "independent"],
+    "requesting-code-review": ["review", "quality", "check", "approve"],
+}
+
 
 class SkillLoader:
     """Load and index skills from .claude/skills/ directory.
@@ -55,6 +67,10 @@ class SkillLoader:
                     clean = word.strip(".,:#*-()[]")
                     if len(clean) > 3:
                         keywords.add(clean)
+                # Add superpowers keyword mappings if available
+                base_name = name.split("/")[-1] if "/" in name else name
+                if base_name in SUPERPOWERS_KEYWORDS:
+                    keywords.update(SUPERPOWERS_KEYWORDS[base_name])
                 self._skill_keywords[name] = keywords
                 loaded += 1
             except Exception as e:

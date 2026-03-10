@@ -129,6 +129,17 @@ STRATEGIES: Dict[str, RecursionStrategy] = {
                      "steps before recursion. Steps execute in topological "
                      "order with independent branches parallelized.",
     ),
+    "superpowers_workflow": RecursionStrategy(
+        name="superpowers_workflow",
+        max_depth=7,
+        budget_distribution="casimir",
+        chunk_strategy="hybrid",
+        branch_factor=1,
+        phi_attention=True,
+        sparse_pruning=False,
+        description="Superpowers mandatory pipeline: brainstorm -> plan -> execute -> "
+                     "spec-review -> quality-review -> verify -> debug. Serial with hard gates.",
+    ),
 }
 
 
@@ -147,6 +158,8 @@ QUERY_TYPE_KEYWORDS = {
     "research": ["research", "investigate", "study", "analyze in depth",
                   "examine", "review", "survey", "assess thoroughly",
                   "evaluate comprehensively", "compare and contrast"],
+    "development": ["build", "implement", "create", "develop", "code",
+                     "feature", "fix", "refactor", "deploy", "test", "ship"],
 }
 
 # Strategy mapping for query types
@@ -157,6 +170,7 @@ QUERY_TYPE_STRATEGY = {
     "creative": "wide_exploratory",
     "exploratory": "wide_exploratory",
     "research": "deep_research",
+    "development": "superpowers_workflow",
     "unknown": "spiral_convergent",
 }
 

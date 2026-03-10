@@ -676,12 +676,33 @@ class PhiEnhancedRLM:
                 results.append(SubCallResult(value=0.5, confidence=0.5,
                                             metadata={"error": str(e)}))
 
+        # 4th verifier: PhiCritic (structurally different -- uses recursive_solve)
+        # Guard against re-entrant calls: critic's recursive_solve would call QEC
+        # again, so we only invoke the critic at the top level.
+        if not getattr(self, '_critic_active', False):
+            try:
+                from .phi_critic import PhiCritic
+                self._critic_active = True
+                critic = PhiCritic(self, critique_depth=1)
+                critique = critic.critique(answer, answer, context)
+                results.append(SubCallResult(
+                    value=critique.quality_score,
+                    confidence=critique.quality_score,
+                    metadata={"verifier": 3, "type": "critic",
+                              "flaws": critique.flaws_found}
+                ))
+            except Exception:
+                pass  # Critic is best-effort enhancement
+            finally:
+                self._critic_active = False
+
         # Compute revised confidence based on majority
         passes = sum(1 for r in results if r.value > 0.5)
-        if passes >= 2:
-            revised_conf = 0.85 + 0.05 * passes / 3
+        total_verifiers = len(results)
+        if passes >= (total_verifiers // 2 + 1):
+            revised_conf = 0.85 + 0.05 * passes / total_verifiers
         else:
-            revised_conf = 0.4 - 0.1 * (3 - passes)
+            revised_conf = 0.4 - 0.1 * (total_verifiers - passes)
 
         return max(0.1, min(0.99, revised_conf)), results
 
