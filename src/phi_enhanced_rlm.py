@@ -326,6 +326,10 @@ class PhiEnhancedRLM:
         self._phi_sparse = None
         self._spiral_memory = None
 
+        # Initialize agent router and skill loader (claude-code-templates integration)
+        self._agent_router = None
+        self._skill_loader = None
+
         # Clear trace file
         self.trace_file.write_text("")
 
@@ -371,8 +375,28 @@ class PhiEnhancedRLM:
                 self._spiral_memory = False
         return self._spiral_memory if self._spiral_memory is not False else None
 
+    def _get_agent_router(self):
+        """Lazy-load agent router for depth-specialized personas."""
+        if self._agent_router is None:
+            try:
+                from .agent_router import AgentRouter
+                self._agent_router = AgentRouter()
+            except ImportError:
+                self._agent_router = False
+        return self._agent_router if self._agent_router is not False else None
+
+    def _get_skill_loader(self):
+        """Lazy-load skill loader for supplementary context."""
+        if self._skill_loader is None:
+            try:
+                from .skill_loader import SkillLoader
+                self._skill_loader = SkillLoader()
+            except ImportError:
+                self._skill_loader = False
+        return self._skill_loader if self._skill_loader is not False else None
+
     # =========================================================================
-    # STEP 2: Query-Conditioned Chunk Selection (Relevance → Diversity)
+    # STEP 2: Query-Conditioned Chunk Selection (Relevance -> Diversity)
     # =========================================================================
 
     def select_chunks_for_subcall(self, query: str = "", max_chunks: int = 3,
@@ -564,11 +588,23 @@ class PhiEnhancedRLM:
 
     def run_qec_verification(self, answer: str, context: str,
                               budget: int) -> Tuple[float, List[SubCallResult]]:
-        """Run 3 independent verifier calls for QEC."""
+        """Run 3 independent verifier calls for QEC.
+
+        When the agent router is available, uses the fact-checker agent
+        persona to enhance verification quality.
+        """
+        # Use fact-checker agent persona if available
+        fc_prefix = ""
+        agent_router = self._get_agent_router()
+        if agent_router:
+            fc_prompt = agent_router.get_verifier_prompt()
+            if fc_prompt:
+                fc_prefix = f"{fc_prompt}\n\n"
+
         verifier_prompts = [
-            f"Check for contradictions in: {answer[:200]}... Context: {context[:100]}",
-            f"Check for missing steps in: {answer[:200]}... Context: {context[:100]}",
-            f"Provide counterexample if wrong: {answer[:200]}... Context: {context[:100]}"
+            f"{fc_prefix}Check for contradictions in: {answer[:200]}... Context: {context[:100]}",
+            f"{fc_prefix}Check for missing steps in: {answer[:200]}... Context: {context[:100]}",
+            f"{fc_prefix}Provide counterexample if wrong: {answer[:200]}... Context: {context[:100]}"
         ]
 
         results = []
@@ -991,6 +1027,18 @@ Remaining budget: {budget} tokens
 Respond in JSON format:
 {{"answer": "your answer", "confidence": 0.0-1.0, "subquestions": ["...", "..."]}}
 """
+
+        # Inject depth-appropriate agent persona (claude-code-templates)
+        agent_router = self._get_agent_router()
+        if agent_router:
+            prompt = agent_router.inject_agent_persona(prompt, depth)
+
+        # Inject relevant skill context if available
+        skill_loader = self._get_skill_loader()
+        if skill_loader and skill_loader.skill_count > 0:
+            relevant_skills = skill_loader.get_relevant_skills(query, max_skills=1)
+            if relevant_skills:
+                prompt += f"\n\n[Relevant Skill]:\n{relevant_skills[0]}"
 
         # Step 3: Call LLM backend
         try:

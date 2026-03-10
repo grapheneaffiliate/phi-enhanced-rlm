@@ -1,0 +1,17 @@
+{
+  "description": "Auto-loads phi-RLM evolution state at session start",
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": ".*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 -c \"import json, os; state = json.load(open('evolution_state.json')) if os.path.exists('evolution_state.json') else {}; print(json.dumps({'generation': state.get('generation', 0), 'fitness': round(state.get('fitness', 0), 4), 'best_strategy': max(state.get('chunk_strategy_scores', {'default': 0}), key=state.get('chunk_strategy_scores', {'default': 0}).get) if state.get('chunk_strategy_scores') else 'diversity', 'agent_performance': state.get('agent_performance', {})}))\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}

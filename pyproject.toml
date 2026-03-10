@@ -4,15 +4,15 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "phi-enhanced-rlm"
-version = "3.0.0"
-description = "Self-evolving Recursive Language Model with φ-Geometric Mathematics"
+version = "4.0.0"
+description = "Self-evolving Recursive Language Model with φ-Geometric Mathematics and Multi-Agent Integration"
 readme = "README.md"
 license = {text = "MIT"}
 requires-python = ">=3.9"
 authors = [
     {name = "Tim McGirl", email = "grapheneaffiliate@users.noreply.github.com"}
 ]
-keywords = ["llm", "nlp", "ai", "recursive", "golden-ratio", "phi", "mathematics", "self-evolving", "e8"]
+keywords = ["llm", "nlp", "ai", "recursive", "golden-ratio", "phi", "mathematics", "self-evolving", "e8", "multi-agent", "claude-code-templates"]
 classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Developers",

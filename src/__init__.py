@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 """
-PHI-Enhanced RLM Core Library — v3.0.0
+PHI-Enhanced RLM Core Library -- v4.0.0
 
-Self-evolving recursive language model with φ-geometric mathematics.
+Self-evolving recursive language model with phi-geometric mathematics
+and multi-agent integration via claude-code-templates.
 """
 
 from .phi_enhanced_rlm import PhiEnhancedRLM, ContextChunk, SubCallResult, LLMResponse
@@ -31,6 +32,10 @@ from .phi_bayesian import PhiBayesianOptimizer
 from .ensemble_backend import EnsembleBackend
 from .streaming import ReasoningEvent, recursive_solve_stream
 
+# Agent integration (v4.0)
+from .agent_router import AgentRouter, DEPTH_AGENT_MAP
+from .skill_loader import SkillLoader
+
 # Vector store (optional - requires chromadb)
 try:
     from .vector_store import VectorStore, RLMPipeline, Document, QueryResult  # noqa: F401
@@ -38,7 +43,7 @@ try:
 except ImportError:
     VECTOR_STORE_AVAILABLE = False
 
-__version__ = "3.0.0"
+__version__ = "4.0.0"
 __all__ = [
     # Core RLM
     "PhiEnhancedRLM",
@@ -93,4 +98,8 @@ __all__ = [
     # Streaming (v3.0)
     "ReasoningEvent",
     "recursive_solve_stream",
+    # Agent Integration (v4.0)
+    "AgentRouter",
+    "DEPTH_AGENT_MAP",
+    "SkillLoader",
 ]
