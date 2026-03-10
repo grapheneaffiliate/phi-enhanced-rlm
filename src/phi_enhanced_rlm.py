@@ -272,11 +272,12 @@ class PhiEnhancedRLM:
     Now with real embeddings support for better chunk selection!
     """
     
-    def __init__(self, base_llm_callable: Callable, context_chunks: List[str], 
+    def __init__(self, base_llm_callable: Callable, context_chunks: List[str],
                  embeddings: Optional[np.ndarray] = None,
                  total_budget_tokens: int = 4096,
                  trace_file: str = "rlm_trace.jsonl",
-                 embedder: Optional['CachedEmbedder'] = None):
+                 embedder: Optional['CachedEmbedder'] = None,
+                 evolution_state: Optional[Any] = None):
         """
         Args:
             base_llm_callable: Function (prompt, max_tokens) -> JSON string
@@ -285,41 +286,83 @@ class PhiEnhancedRLM:
             total_budget_tokens: Total token budget for recursion
             trace_file: Path to trace log file
             embedder: Optional embedder instance (uses global if not provided)
+            evolution_state: Optional EvolutionState with learned parameters
         """
         self.llm = base_llm_callable
         self.context_chunks_text = context_chunks
         self.total_budget = total_budget_tokens
         self.trace_file = Path(trace_file)
-        
+        self.evolution_state = evolution_state
+
         # Store embedder for query embedding
         self.embedder = embedder or get_global_embedder()
-        
+
         # Generate embeddings if not provided (using REAL embeddings now!)
         if embeddings is None:
             logger.info(f"Generating embeddings for {len(context_chunks)} chunks...")
             embeddings = get_embeddings_batch(context_chunks, self.embedder)
             logger.info(f"Embeddings shape: {embeddings.shape}")
-        
+
         self.full_embeddings = embeddings
-        
+
         # State tracking
         self.info_history = []
         self.confidence_history = []
         self.prev_answer_tokens = set()
-        
+
         # Initialize chunks
         self.chunks = []
         for i, (text, emb) in enumerate(zip(context_chunks, embeddings)):
             self.chunks.append(ContextChunk(id=i, text=text, embedding=emb))
-            
+
         # Initialize φ-Gram Matrix
         self.phi_gram = PhiGramMatrixForEmbeddings(self.full_embeddings)
-        
+
         # Compute budget allocation
         self.budget_map = self.allocate_recursion_budget(total_budget_tokens)
-        
+
+        # Apply evolution state overrides if provided
+        if evolution_state is not None:
+            self._apply_evolution_state(evolution_state)
+
+        # Initialize φ-attention injector (lazy import to avoid circular deps)
+        self._phi_attention = None
+        self._phi_sparse = None
+
         # Clear trace file
         self.trace_file.write_text("")
+
+    def _apply_evolution_state(self, state):
+        """Apply learned parameters from evolution state."""
+        if hasattr(state, 'budget_weights'):
+            weights = np.array(state.budget_weights[:8], dtype=float)
+            weights = np.maximum(weights, 0.1)
+            total = weights.sum()
+            for i in range(min(8, len(self.budget_map))):
+                self.budget_map[i] = int(self.total_budget * weights[i] / total)
+
+    def _get_phi_attention(self):
+        """Lazy-load φ-attention injector."""
+        if self._phi_attention is None:
+            try:
+                from phi_attention import PhiAttentionInjector
+                self._phi_attention = PhiAttentionInjector()
+            except ImportError:
+                self._phi_attention = False
+        return self._phi_attention if self._phi_attention is not False else None
+
+    def _get_phi_sparse(self):
+        """Lazy-load φ-sparse reasoner."""
+        if self._phi_sparse is None:
+            try:
+                pruning_ratio = 0.618
+                if self.evolution_state and hasattr(self.evolution_state, 'pruning_ratio'):
+                    pruning_ratio = self.evolution_state.pruning_ratio
+                from phi_sparse_reasoning import PhiSparseReasoner
+                self._phi_sparse = PhiSparseReasoner(pruning_ratio=pruning_ratio)
+            except ImportError:
+                self._phi_sparse = False
+        return self._phi_sparse if self._phi_sparse is not False else None
 
     # =========================================================================
     # STEP 2: Query-Conditioned Chunk Selection (Relevance → Diversity)
@@ -879,8 +922,16 @@ Respond in JSON format:
         sub_gram = self.phi_gram.submatrix(selected_ids)
         logdet_selected = sub_gram.log_determinant
         
-        # Step 2: Build prompt
-        prompt = f"""Query: {query}
+        # Step 2: Build prompt (with φ-attention injection if available)
+        phi_attn = self._get_phi_attention()
+        use_phi = (phi_attn is not None and
+                   (self.evolution_state is None or
+                    getattr(self.evolution_state, 'phi_attention_enabled', True)))
+
+        if use_phi:
+            prompt = phi_attn.build_phi_prompt(query, selected_text, depth, budget)
+        else:
+            prompt = f"""Query: {query}
 
 Context:
 {selected_text}
@@ -956,8 +1007,21 @@ Respond in JSON format:
                 metadata={"depth": depth, "path": path, "stop_reason": "no_subquestions"}
             )
         
+        # Apply φ-sparse pruning if available
+        phi_sparse = self._get_phi_sparse()
+        use_sparse = (phi_sparse is not None and
+                      (self.evolution_state is None or
+                       getattr(self.evolution_state, 'sparse_pruning_enabled', True)))
+
+        if use_sparse and len(subquestions) > 1:
+            scores = phi_sparse.score_subquestions(query, subquestions, answer)
+            subquestions = phi_sparse.adaptive_prune(subquestions, scores, confidence)
+
         # Process subquestions (parallel if enabled)
-        subquestions_limited = subquestions[:3]  # Limit to 3 subquestions
+        branch_factor = 3
+        if self.evolution_state and hasattr(self.evolution_state, 'branch_factor'):
+            branch_factor = self.evolution_state.branch_factor
+        subquestions_limited = subquestions[:branch_factor]
         
         if getattr(self, 'parallel_enabled', False) and len(subquestions_limited) > 1:
             # Parallel processing

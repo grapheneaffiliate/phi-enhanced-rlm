@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 """
-PHI-Enhanced RLM Core Library
+PHI-Enhanced RLM Core Library — v3.0.0
+
+Self-evolving recursive language model with φ-geometric mathematics.
 """
 
 from .phi_enhanced_rlm import PhiEnhancedRLM, ContextChunk, SubCallResult, LLMResponse
@@ -17,6 +19,14 @@ from .extractors import (
 from .progress import RichProgressManager, get_progress_manager
 from .openrouter_backend import OpenRouterBackend
 
+# Evolution engine
+from .evolution import PhiEvolutionEngine, EvolutionState
+from .phi_attention import PhiAttentionInjector, PhiConfidenceScaler
+from .phi_sparse_reasoning import PhiSparseReasoner
+from .phi_memory import PhiSpiralMemory
+from .session_memory import SessionMemory
+from .meta_recursion import MetaRecursiveRLM, RecursionStrategy
+
 # Vector store (optional - requires chromadb)
 try:
     from .vector_store import VectorStore, RLMPipeline, Document, QueryResult
@@ -24,29 +34,49 @@ try:
 except ImportError:
     VECTOR_STORE_AVAILABLE = False
 
-__version__ = "2.1.0"
+__version__ = "3.0.0"
 __all__ = [
+    # Core RLM
     "PhiEnhancedRLM",
-    "ContextChunk", 
+    "ContextChunk",
     "SubCallResult",
     "LLMResponse",
+    # Mathematics
     "PHI",
     "PHI_INV",
     "LOG_PHI",
     "PhiGramMatrix",
     "SpectralFlow",
     "PhiRenormalizationGroup",
+    # Embeddings & Cache
     "get_embedder",
     "CachedEmbedder",
     "EmbeddingConfig",
     "SQLiteEmbeddingCache",
     "get_sqlite_cache",
+    # Extractors
     "extract_pdf_content",
     "extract_docx_content",
     "extract_web_content",
     "chunk_python_code",
     "chunk_code_file",
+    # Progress
     "RichProgressManager",
     "get_progress_manager",
+    # Backend
     "OpenRouterBackend",
+    # Evolution (v3.0)
+    "PhiEvolutionEngine",
+    "EvolutionState",
+    # φ-Attention (v3.0)
+    "PhiAttentionInjector",
+    "PhiConfidenceScaler",
+    # φ-Sparse Reasoning (v3.0)
+    "PhiSparseReasoner",
+    # φ-Spiral Memory (v3.0)
+    "PhiSpiralMemory",
+    "SessionMemory",
+    # Meta-Recursion (v3.0)
+    "MetaRecursiveRLM",
+    "RecursionStrategy",
 ]
