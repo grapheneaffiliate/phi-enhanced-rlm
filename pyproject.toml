@@ -4,17 +4,17 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "phi-enhanced-rlm"
-version = "2.1.0"
-description = "Recursive Language Model enhanced with φ-Separation Mathematics"
+version = "3.0.0"
+description = "Self-evolving Recursive Language Model with φ-Geometric Mathematics"
 readme = "README.md"
 license = {text = "MIT"}
 requires-python = ">=3.8"
 authors = [
     {name = "Tim McGirl", email = "grapheneaffiliate@users.noreply.github.com"}
 ]
-keywords = ["llm", "nlp", "ai", "recursive", "golden-ratio", "phi", "mathematics"]
+keywords = ["llm", "nlp", "ai", "recursive", "golden-ratio", "phi", "mathematics", "self-evolving", "e8"]
 classifiers = [
-    "Development Status :: 4 - Beta",
+    "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Developers",
     "Intended Audience :: Science/Research",
     "License :: OSI Approved :: MIT License",
@@ -51,6 +51,9 @@ dev = [
     "black>=23.0.0",
     "ruff>=0.1.0",
 ]
+benchmark = [
+    "datasets>=2.0.0",
+]
 
 [project.urls]
 Homepage = "https://github.com/grapheneaffiliate/phi-enhanced-rlm"
@@ -60,10 +63,16 @@ Issues = "https://github.com/grapheneaffiliate/phi-enhanced-rlm/issues"
 [project.scripts]
 phi-rlm = "cli.chat:main"
 phi-analyze = "cli.repo_analyzer:main"
+phi-evolve = "src.evolution_loop:main"
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["src*", "cli*", "api*"]
+include = ["src*", "cli*", "api*", "benchmarks*"]
+
+[tool.pytest.ini_options]
+markers = [
+    "integration: marks tests requiring real API keys (deselect with '-m \"not integration\"')",
+]
 
 [tool.black]
 line-length = 100
