@@ -65,6 +65,7 @@ phi-rlm = "cli.chat:main"
 phi-analyze = "cli.repo_analyzer:main"
 phi-evolve = "src.evolution_loop:main"
 phi-mcp = "src.mcp_server:main"
+phi-review = "src.code_review:main"
 
 [tool.setuptools.packages.find]
 where = ["."]

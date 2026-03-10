@@ -42,6 +42,7 @@ from .outcome_tracker import OutcomeTracker
 from .phi_critic import PhiCritic, CritiqueResult
 from .phi_planner import PhiPlanner, ExecutionPlan
 from .workflow_orchestrator import SuperpowersOrchestrator, WORKFLOW_PIPELINE
+from .code_review import PhiCodeReview, ReviewResult, ReviewFinding
 
 # Vector store (optional - requires chromadb)
 try:
@@ -120,4 +121,8 @@ __all__ = [
     # Superpowers Integration (v4.2)
     "SuperpowersOrchestrator",
     "WORKFLOW_PIPELINE",
+    # Code Review (v4.2)
+    "PhiCodeReview",
+    "ReviewResult",
+    "ReviewFinding",
 ]
