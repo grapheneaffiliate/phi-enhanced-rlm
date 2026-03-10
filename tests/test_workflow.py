@@ -8,7 +8,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from src.phi_enhanced_rlm import PhiEnhancedRLM, MockLLMBackend
 from src.workflow_orchestrator import (
-    SuperpowersOrchestrator, WORKFLOW_PIPELINE, WorkflowStep,
+    SuperpowersOrchestrator, WORKFLOW_PIPELINE,
 )
 from src.meta_recursion import MetaRecursiveRLM, STRATEGIES, QUERY_TYPE_KEYWORDS, QUERY_TYPE_STRATEGY
 from src.skill_loader import SUPERPOWERS_KEYWORDS
