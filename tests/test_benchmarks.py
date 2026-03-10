@@ -1,9 +1,7 @@
 #!/usr/bin/env python3
 """Tests for benchmark infrastructure."""
 
-import json
 import sys
-import pytest
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -12,8 +10,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent / "benchmarks"))
 
 from runner import (
     VanillaRLM, load_dataset, check_answer, run_benchmark,
-    BenchmarkQuestion, BenchmarkResult, BenchmarkSummary,
-    run_single, estimate_tokens,
+    estimate_tokens,
 )
 from phi_enhanced_rlm import MockLLMBackend, SubCallResult
 

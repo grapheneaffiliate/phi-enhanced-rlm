@@ -17,7 +17,6 @@ import os
 import sys
 import pytest
 from pathlib import Path
-from unittest.mock import patch, MagicMock
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
@@ -124,7 +123,7 @@ class TestBenchmarkIntegration:
     def test_benchmark_runner_with_mock(self):
         """Benchmark runner should work with mock backend."""
         sys.path.insert(0, str(Path(__file__).parent.parent / "benchmarks"))
-        from runner import run_benchmark, load_dataset, BenchmarkQuestion
+        from runner import run_benchmark
 
         dataset_path = str(Path(__file__).parent.parent / "benchmarks" / "gsm8k_sample.json")
         summaries = run_benchmark(dataset_path, max_questions=5)

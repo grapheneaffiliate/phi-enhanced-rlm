@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Tests for the φ-governed self-evolution engine."""
 
-import json
 import os
 import sys
 import tempfile
@@ -12,7 +11,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 from evolution import PhiEvolutionEngine, EvolutionState, EvaluationResult
-from phi_separation_novel_mathematics import PHI, PHI_INV
+from phi_separation_novel_mathematics import PHI_INV
 
 
 class TestEvolutionState:

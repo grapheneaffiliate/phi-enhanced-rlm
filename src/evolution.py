@@ -19,10 +19,10 @@ import time
 import numpy as np
 from dataclasses import dataclass, field, asdict
 from pathlib import Path
-from typing import Dict, List, Optional, Any, Tuple
+from typing import Dict, List, Optional, Any
 
 from phi_separation_novel_mathematics import (
-    PHI, PHI_INV, LOG_PHI, EPSILON, CASIMIR_DEGREES, E8_DIM
+    PHI_INV
 )
 
 logger = logging.getLogger(__name__)
@@ -164,7 +164,7 @@ class PhiEvolutionEngine:
 
         confidences = [t.get("confidence", 0.5) for t in traces]
         depths = [t.get("depth", 0) for t in traces]
-        stop_reasons = [t.get("stop_reason", "none") for t in traces]
+        [t.get("stop_reason", "none") for t in traces]
 
         # Count premature and late stops
         premature_stops = sum(
