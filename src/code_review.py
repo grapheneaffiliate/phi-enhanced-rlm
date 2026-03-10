@@ -19,14 +19,14 @@ Usage:
     findings = reviewer.review_file("src/x.py") # Review a specific file
 """
 
-import subprocess
+import concurrent.futures
 import json
 import logging
+import subprocess
 import time
-import concurrent.futures
 from dataclasses import dataclass, field
-from typing import List, Dict, Optional, Any, Callable
 from pathlib import Path
+from typing import Any, Callable, Dict, List
 
 logger = logging.getLogger(__name__)
 

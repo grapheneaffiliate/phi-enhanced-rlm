@@ -1,18 +1,19 @@
 #!/usr/bin/env python3
 """Tests for phi-Code Review module."""
 
-import sys
 import json
-import time
+import sys
 import threading
+import time
 from pathlib import Path
-
-import pytest
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from src.code_review import (
-    PhiCodeReview, ReviewFinding, ReviewResult, REVIEW_PERSPECTIVES
+    REVIEW_PERSPECTIVES,
+    PhiCodeReview,
+    ReviewFinding,
+    ReviewResult,
 )
 
 
