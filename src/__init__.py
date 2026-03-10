@@ -41,6 +41,7 @@ from .tool_executor import ToolRegistry, ToolResult
 from .outcome_tracker import OutcomeTracker
 from .phi_critic import PhiCritic, CritiqueResult
 from .phi_planner import PhiPlanner, ExecutionPlan
+from .workflow_orchestrator import SuperpowersOrchestrator, WORKFLOW_PIPELINE
 
 # Vector store (optional - requires chromadb)
 try:
@@ -116,4 +117,7 @@ __all__ = [
     "CritiqueResult",
     "PhiPlanner",
     "ExecutionPlan",
+    # Superpowers Integration (v4.2)
+    "SuperpowersOrchestrator",
+    "WORKFLOW_PIPELINE",
 ]
