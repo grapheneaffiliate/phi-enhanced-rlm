@@ -37,7 +37,6 @@ The φ-corrections come from the H4 projection:
 import math
 from typing import Dict, NamedTuple, Tuple
 
-
 # Fundamental constants
 PHI = (1 + math.sqrt(5)) / 2
 EPSILON = 28 / 248  # dim(SO(8))/dim(E8)

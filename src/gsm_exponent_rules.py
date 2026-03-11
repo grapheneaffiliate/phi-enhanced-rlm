@@ -51,7 +51,6 @@ This gives: χ_orb(E₈/H₄) = 1, completing the anchor derivation.
 import math
 from typing import Dict, List, NamedTuple
 
-
 # Fundamental constants
 PHI = (1 + math.sqrt(5)) / 2
 EPSILON = 28 / 248
