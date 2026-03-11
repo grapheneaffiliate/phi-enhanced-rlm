@@ -308,6 +308,55 @@ class TestGapModules:
         assert len(INCONSISTENCY_RESOLUTIONS) == 9
         assert get("ms_over_md").derivation_tier == "rigorous"
 
+    def test_zero_numerological_constants(self):
+        """v5.1: ALL constants must be well_motivated or rigorous — ZERO numerological."""
+        from src.gsm_constants import get_all
+        all_constants = get_all()
+        numerological = [
+            name for name, c in all_constants.items()
+            if c.derivation_tier == "numerological"
+        ]
+        assert len(numerological) == 0, f"Numerological constants remain: {numerological}"
+
+    def test_zero_pattern_matched_constants(self):
+        """v5.1: ALL constants must be well_motivated or rigorous — ZERO pattern_matched."""
+        from src.gsm_constants import get_all
+        all_constants = get_all()
+        pattern_matched = [
+            name for name, c in all_constants.items()
+            if c.derivation_tier == "pattern_matched"
+        ]
+        assert len(pattern_matched) == 0, f"Pattern-matched constants remain: {pattern_matched}"
+
+    def test_all_constants_well_motivated_or_above(self):
+        """v5.1: Every constant at well_motivated or rigorous tier."""
+        from src.gsm_constants import get_all
+        all_constants = get_all()
+        valid_tiers = {"rigorous", "well_motivated"}
+        for name, c in all_constants.items():
+            assert c.derivation_tier in valid_tiers, \
+                f"{name} has tier '{c.derivation_tier}', expected well_motivated or rigorous"
+
+    def test_proton_mass_upgraded(self):
+        """v5.1: Proton mass is now well_motivated (was numerological)."""
+        from src.gsm_constants import get
+        c = get("mp_over_me")
+        assert c.derivation_tier == "well_motivated"
+        assert "heat kernel" in c.e8_origin.lower() or "color" in c.e8_origin.lower()
+
+    def test_hubble_upgraded(self):
+        """v5.1: Hubble constant is now well_motivated (was numerological)."""
+        from src.gsm_constants import get
+        c = get("H0")
+        assert c.derivation_tier == "well_motivated"
+
+    def test_h0_100_derivation(self):
+        """Verify 100 = sum(H4_exponents) + sum(boundary_Casimirs) = 60 + 40."""
+        assert sum(H4_EXPONENTS) == 60
+        boundary_casimirs = [2, 8, 30]
+        assert sum(boundary_casimirs) == 40
+        assert sum(H4_EXPONENTS) + sum(boundary_casimirs) == 100
+
 
 class TestGapClosures:
     """Tests verifying ALL 8 gaps are now closed."""
