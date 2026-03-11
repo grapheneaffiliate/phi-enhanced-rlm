@@ -316,19 +316,27 @@ Physics requires:
 The v2.0 wave equation (discrete Klein-Gordon on 600-cell) is a start but has
 not been connected to actual observables.
 
-### Gap 5: Inconsistent Formulas (SEVERITY: MEDIUM)
+### Gap 5: Inconsistent Formulas (SEVERITY: HIGH — upgraded after deep audit)
 
-Multiple quantities have different formulas in different files:
+Multiple quantities have **completely different formulas** across files. The
+Status Report contains substantially different derivations from the main theory:
 
-| Quantity | Formula in FORMULAS.md | Formula in verification script |
-|----------|----------------------|-------------------------------|
-| z_CMB | φ¹⁴ + 246 | φ¹⁴ + φ⁶ + φ² - φ⁻² - 1 |
-| n_s | 1 - φ⁻⁷ | 1 - φ⁻⁸ - φ⁻¹¹ |
-| Cabibbo angle | (φ⁻¹+φ⁻⁶)/3 × corr | φ⁻² - φ⁻⁴ |
-| Ω_Λ | 6-term formula | Different expansion |
+| Quantity | FORMULAS.md / Theory | Status Report | Same? |
+|----------|---------------------|---------------|-------|
+| m_p/m_e | 6π⁵(1+φ⁻²⁴+φ⁻¹³/240) = 1836.15 | 7×248+100+φ⁻⁷ = 1836.03 | **NO** |
+| α_s | 1/[2φ³(1+φ⁻¹⁴)(1+8φ⁻⁵/14400)] | 1/8 - φ⁻⁸/3 | **NO** |
+| V_ub | 2φ⁻⁷/19 | 1/248 - φ⁻¹⁷/3 | **NO** |
+| sin²θ_W corr | +φ⁻¹⁶ | +φ⁻⁷/78 | **NO** |
+| m_μ/m_e | φ¹¹+φ⁴+1-φ⁻⁵-φ⁻¹⁵ = 206.768 | 200+φ⁴ = 206.854 | **NO** |
+| sin θ_C | (φ⁻¹+φ⁻⁶)/3×(1+8φ⁻⁶/248) | 27/133+φ⁻⁸ | **NO** |
+| δ_CP (PMNS) | 180°+arctan(φ⁻²-φ⁻⁵) = 196.3° | 180°+arcsin(φ⁻³) = 193.7° | **NO** |
+| z_CMB | φ¹⁴ + 246 | φ¹⁴+φ⁶+φ²-φ⁻²-1 (verif.) | **NO** |
+| n_s | 1 - φ⁻⁷ | 1 - φ⁻⁸ - φ⁻¹¹ (verif.) | **NO** |
 
-This suggests the formulas are being refined to match data rather than
-derived from fixed principles.
+**This is the single most damaging finding in the audit.** At least 9 constants
+have multiple incompatible formulas. This pattern is consistent with iterative
+curve-fitting rather than derivation from fixed principles. A true geometric
+derivation should produce ONE formula per quantity.
 
 ### Gap 6: The Proton Mass Formula (SEVERITY: MEDIUM)
 
