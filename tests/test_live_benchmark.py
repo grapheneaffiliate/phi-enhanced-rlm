@@ -2,8 +2,13 @@
 """
 Live benchmark harness — proves viability with a real LLM backend.
 
-Run with:  OPENROUTER_API_KEY=sk-... python -m pytest tests/test_live_benchmark.py -v -s
-Skip with: python -m pytest tests/ -v  (auto-skips when no API key)
+Auto-detects auth:
+  1. Claude Code OAuth (Max plan) — uses session ingress token
+  2. ANTHROPIC_API_KEY — direct API key
+  3. OPENROUTER_API_KEY — OpenRouter fallback
+
+Run:   python -m pytest tests/test_live_benchmark.py -v -s
+Skip:  python -m pytest tests/ -v  (auto-skips when no backend available)
 
 Tests:
 1. Single-query solve at depth 2 — verifies structured JSON round-trip
@@ -24,14 +29,24 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from src.phi_enhanced_rlm import PhiEnhancedRLM, SubCallResult
 
-HAS_API_KEY = bool(os.getenv("OPENROUTER_API_KEY"))
-SKIP_REASON = "OPENROUTER_API_KEY not set — set it to run live benchmarks"
+# Auto-detect available backend
+_SESSION_TOKEN = Path("/home/claude/.claude/remote/.session_ingress_token")
+HAS_ANTHROPIC_OAUTH = _SESSION_TOKEN.exists() and _SESSION_TOKEN.read_text().strip() != ""
+HAS_ANTHROPIC_KEY = bool(os.getenv("ANTHROPIC_API_KEY"))
+HAS_OPENROUTER_KEY = bool(os.getenv("OPENROUTER_API_KEY"))
+HAS_BACKEND = HAS_ANTHROPIC_OAUTH or HAS_ANTHROPIC_KEY or HAS_OPENROUTER_KEY
+SKIP_REASON = "No LLM backend available (need Claude OAuth, ANTHROPIC_API_KEY, or OPENROUTER_API_KEY)"
 
 
 def _get_backend():
-    """Get the real backend, or skip."""
-    from src.openrouter_backend import OpenRouterBackend
-    return OpenRouterBackend()
+    """Get the best available backend. Prefers Anthropic OAuth > API key > OpenRouter."""
+    if HAS_ANTHROPIC_OAUTH or HAS_ANTHROPIC_KEY:
+        from src.anthropic_backend import AnthropicBackend
+        return AnthropicBackend()
+    if HAS_OPENROUTER_KEY:
+        from src.openrouter_backend import OpenRouterBackend
+        return OpenRouterBackend()
+    pytest.skip(SKIP_REASON)
 
 
 def _make_rlm(backend):
@@ -57,7 +72,7 @@ def _make_rlm(backend):
 # 1. Single-query structured solve
 # ═══════════════════════════════════════════════════════════
 
-@pytest.mark.skipif(not HAS_API_KEY, reason=SKIP_REASON)
+@pytest.mark.skipif(not HAS_BACKEND, reason=SKIP_REASON)
 class TestLiveSingleQuery:
     """Verify a single query produces valid structured output."""
 
@@ -93,7 +108,7 @@ class TestLiveSingleQuery:
 # 2. GSM8K benchmark — φ-RLM vs vanilla
 # ═══════════════════════════════════════════════════════════
 
-@pytest.mark.skipif(not HAS_API_KEY, reason=SKIP_REASON)
+@pytest.mark.skipif(not HAS_BACKEND, reason=SKIP_REASON)
 class TestLiveBenchmark:
     """Run real benchmark and compare φ-RLM vs vanilla."""
 
@@ -129,7 +144,7 @@ class TestLiveBenchmark:
 # 3. Multi-strategy comparison
 # ═══════════════════════════════════════════════════════════
 
-@pytest.mark.skipif(not HAS_API_KEY, reason=SKIP_REASON)
+@pytest.mark.skipif(not HAS_BACKEND, reason=SKIP_REASON)
 class TestLiveStrategies:
     """Compare meta-recursion strategies on same query with real LLM."""
 
@@ -174,7 +189,7 @@ class TestLiveStrategies:
 # 4. Code review with real LLM
 # ═══════════════════════════════════════════════════════════
 
-@pytest.mark.skipif(not HAS_API_KEY, reason=SKIP_REASON)
+@pytest.mark.skipif(not HAS_BACKEND, reason=SKIP_REASON)
 class TestLiveCodeReview:
     """Verify code review produces real findings from a real LLM."""
 
@@ -215,7 +230,7 @@ def login(username, password):
 # 5. Evolution from real traces
 # ═══════════════════════════════════════════════════════════
 
-@pytest.mark.skipif(not HAS_API_KEY, reason=SKIP_REASON)
+@pytest.mark.skipif(not HAS_BACKEND, reason=SKIP_REASON)
 class TestLiveEvolution:
     """Prove the evolution loop closes with real LLM traces."""
 
