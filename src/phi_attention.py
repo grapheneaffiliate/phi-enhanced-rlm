@@ -224,5 +224,6 @@ class PhiConfidenceScaler:
         Apply torsion correction to confidence.
 
         ε = 28/248 ensures minority views are preserved in aggregation.
+        Result is clamped to [0, 1] to remain a valid probability.
         """
-        return base_confidence + EPSILON * minority_weight
+        return min(1.0, max(0.0, base_confidence + EPSILON * minority_weight))

@@ -259,6 +259,16 @@ class TestPhiAttention:
         # Zero minority weight means no correction
         assert PhiConfidenceScaler.torsion_correct(0.8, 0.0) == 0.8
 
+    def test_torsion_correction_clamped_to_bounds(self):
+        # High base + high minority should clamp to 1.0, not exceed
+        corrected = PhiConfidenceScaler.torsion_correct(1.0, 1.0)
+        assert corrected == 1.0
+        # Verify all combinations stay in [0, 1]
+        for base in [0.0, 0.3, 0.5, 0.7, 0.95, 1.0]:
+            for minority in [0.0, 0.2, 0.5, 1.0]:
+                c = PhiConfidenceScaler.torsion_correct(base, minority)
+                assert 0.0 <= c <= 1.0, f"Out of bounds: torsion_correct({base}, {minority}) = {c}"
+
     def test_aggregate_phi_weighted(self):
         confs = [0.9, 0.8, 0.7, 0.6]
         agg = PhiConfidenceScaler.aggregate_phi_weighted(confs)
