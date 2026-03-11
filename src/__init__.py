@@ -57,7 +57,7 @@ try:
 except ImportError:
     VECTOR_STORE_AVAILABLE = False
 
-__version__ = "5.0.0"  # GSM Unification Release
+__version__ = "5.1.0"  # GSM Complete Unification — Zero Weaknesses Release
 __all__ = [
     # Core RLM
     "PhiEnhancedRLM",
