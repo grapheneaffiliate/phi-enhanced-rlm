@@ -39,7 +39,7 @@ where b_k depends on the particle content at each Casimir scale.
 """
 
 import math
-from typing import Dict, List, NamedTuple, Tuple
+from typing import Dict, List, NamedTuple
 
 import numpy as np
 
@@ -185,8 +185,6 @@ class SMBetaFunctions:
         Uses the relation: α⁻¹ = α₁⁻¹ × 3/5 + α₂⁻¹
         (in GUT normalization, α₁ = 5/3 × g'²/(4π))
         """
-        a1_inv = SMBetaFunctions.alpha1_inv(mu)
-        a2_inv = SMBetaFunctions.alpha2_inv(mu)
         # α_em⁻¹ = (3/8)α₁⁻¹ + (5/8)α₂⁻¹ ... actually:
         # 1/α_em = 1/α₁ × (3/5) + 1/α₂ is not right either
         # Correct: α_em = α₂ × sin²θ_W, so α_em⁻¹ = α₂⁻¹/sin²θ_W

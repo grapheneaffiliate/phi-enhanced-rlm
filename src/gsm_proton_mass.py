@@ -37,7 +37,6 @@ The φ-corrections come from the H4 projection:
 import math
 from typing import Dict, NamedTuple, Tuple
 
-import numpy as np
 
 # Fundamental constants
 PHI = (1 + math.sqrt(5)) / 2
@@ -109,8 +108,9 @@ def e8_theta_derivation() -> float:
     # Heat kernel at t = 1/(2π):
     # K(t) = (2πt)^(-4) × Θ_E8(it/(2π))
     # The mass scale is determined by K(t_proton)/K(t_electron)
+    # Heat kernel theta value at t = 1/(2π) (used for numerical verification):
     t = 1 / (2 * math.pi)
-    theta = sum(
+    _theta = sum(  # noqa: F841 — retained for verification/documentation
         count * math.exp(-2 * math.pi * n * t)
         for n, count in theta_coefficients.items()
     )
@@ -410,18 +410,13 @@ def derive_pi5_from_e8() -> Dict[str, object]:
     # Compute all the factors
     color_factor = math.factorial(3)  # = 6
 
-    # Surface area of S⁵ (5-sphere in R⁶)
-    vol_s5 = 2 * math.pi**3  # = 2π³
-
-    # E8 lattice ratio: ζ(4)/ζ(8) × normalization
+    # E8 lattice ratio: ζ(4) from Epstein zeta
     zeta_4 = math.pi**4 / 90
-    zeta_8 = math.pi**8 / 9450
 
     # The π⁵ decomposition
     pi5 = math.pi**5
 
     # Verification: multiple paths to π⁵
-    path1 = vol_s5 / 2 * math.pi**2 / 2  # = π³ × π²/2 = π⁵/2 ... not quite
     path2 = (2 * math.pi)**5 / 32  # = 32π⁵/32 = π⁵ ✓
     path3_zeta = 90 * zeta_4 * math.pi  # = 90 × π⁴/90 × π = π⁵ ✓
 

@@ -11,7 +11,6 @@ Run: python -m pytest tests/test_gsm_unified.py -v
 
 import math
 
-import numpy as np
 import pytest
 
 PHI = (1 + math.sqrt(5)) / 2
