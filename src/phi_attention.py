@@ -145,7 +145,8 @@ Your final confidence should reflect the balance between support and contradicti
 
     def build_phi_prompt(self, query: str, context_text: str,
                           depth: int, budget: int,
-                          use_chain_of_thought: bool = False) -> str:
+                          use_chain_of_thought: bool = False,
+                          require_subquestions: bool = False) -> str:
         """
         Build a complete φ-enhanced prompt.
 
@@ -157,6 +158,17 @@ Your final confidence should reflect the balance between support and contradicti
         else:
             reasoning_scaffold = ""
 
+        if require_subquestions:
+            subq_instruction = (
+                "You MUST provide 2-3 subquestions that decompose this problem into "
+                "components for deeper recursive analysis. Even if the answer seems "
+                "obvious, identify verification angles or supporting sub-problems."
+            )
+        else:
+            subq_instruction = (
+                "Provide subquestions if deeper analysis would improve the answer."
+            )
+
         base_prompt = f"""Query: {query}
 
 Context:
@@ -165,8 +177,10 @@ Context:
 Recursion depth: {depth}
 Remaining budget: {budget} tokens
 
+{subq_instruction}
+
 Respond in JSON format:
-{{"answer": "your answer", "confidence": 0.0-1.0, "subquestions": ["...", "..."]}}
+{{"answer": "your answer", "confidence": 0.0-1.0, "subquestions": ["sub-question 1", "sub-question 2"]}}
 """
         # Inject φ-structure before the prompt
         enhanced = self.inject_phi_structure(base_prompt, depth, budget)
