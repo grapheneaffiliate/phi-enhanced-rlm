@@ -11,13 +11,13 @@ Real feedback from users provides the actual fitness signal that
 drives meaningful self-evolution.
 """
 
-import json
-import time
 import hashlib
+import json
 import logging
+import time
+from dataclasses import asdict, dataclass, field
 from pathlib import Path
-from dataclasses import dataclass, field, asdict
-from typing import List, Optional, Dict, Any
+from typing import Any, Dict, List, Optional
 
 from .phi_separation_novel_mathematics import PHI_INV
 

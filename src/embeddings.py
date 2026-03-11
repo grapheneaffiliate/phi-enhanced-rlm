@@ -22,14 +22,15 @@ Usage:
     vectors = embedder.embed(["text 1", "text 2"])
 """
 
-import os
 import hashlib
-import numpy as np
+import logging
+import os
+from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from pathlib import Path
 from typing import List, Optional, Tuple
-from dataclasses import dataclass
-from abc import ABC, abstractmethod
-import logging
+
+import numpy as np
 
 logger = logging.getLogger(__name__)
 

@@ -21,12 +21,12 @@ import json
 import logging
 import time
 from dataclasses import dataclass, field
-from typing import List, Dict, Optional, Any
+from typing import Any, Dict, List, Optional
 
 import numpy as np
 
-from .phi_separation_novel_mathematics import PHI, PHI_INV, CASIMIR_DEGREES
 from .phi_enhanced_rlm import PhiEnhancedRLM, SubCallResult
+from .phi_separation_novel_mathematics import CASIMIR_DEGREES, PHI, PHI_INV
 
 logger = logging.getLogger(__name__)
 

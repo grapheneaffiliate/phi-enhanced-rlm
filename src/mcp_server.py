@@ -17,7 +17,7 @@ Provides tools:
 import json
 import logging
 import sys
-from typing import Dict, Any
+from typing import Any, Dict
 
 logger = logging.getLogger(__name__)
 
@@ -43,8 +43,8 @@ class PhiRLMServer:
     def _get_rlm(self):
         """Lazy-initialize the RLM engine."""
         if self._rlm is None:
-            from .phi_enhanced_rlm import PhiEnhancedRLM, MockLLMBackend
             from .evolution import PhiEvolutionEngine
+            from .phi_enhanced_rlm import MockLLMBackend, PhiEnhancedRLM
 
             # Try to load evolution state
             engine = PhiEvolutionEngine()

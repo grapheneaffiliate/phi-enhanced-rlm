@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-import sys
 import os
+import sys
 from pathlib import Path
 
 # Fix Windows console encoding via environment
@@ -64,8 +64,9 @@ def _test_decorator(name):
 
 @_test_decorator("SQLite Embedding Cache")
 def test_sqlite_cache():
-    from src.cache import SQLiteEmbeddingCache
     import numpy as np
+
+    from src.cache import SQLiteEmbeddingCache
 
     # Use temp file (will be cleaned up manually)
     tmpdir = tempfile.mkdtemp()
@@ -200,7 +201,7 @@ class Greeter:
 
 @_test_decorator("Progress Manager")
 def test_progress():
-    from src.progress import get_progress_manager, SimpleProgressManager
+    from src.progress import SimpleProgressManager, get_progress_manager
 
     pm = get_progress_manager(use_rich=False)  # Use simple for testing
     assert isinstance(pm, SimpleProgressManager)
@@ -237,8 +238,9 @@ def test_confidence_viz():
 
 @_test_decorator("Embeddings with SQLite Cache")
 def test_embeddings_sqlite():
-    from src.embeddings import EmbeddingCache
     import numpy as np
+
+    from src.embeddings import EmbeddingCache
 
     tmpdir = tempfile.mkdtemp()
     try:
@@ -278,7 +280,7 @@ def test_embeddings_sqlite():
 
 @_test_decorator("RLM Parallel Processing Setup")
 def test_rlm_parallel():
-    from src.phi_enhanced_rlm import PhiEnhancedRLM, MockLLMBackend
+    from src.phi_enhanced_rlm import MockLLMBackend, PhiEnhancedRLM
 
     mock_llm = MockLLMBackend(seed=42)
     chunks = ["Chunk 1", "Chunk 2", "Chunk 3"]
@@ -299,8 +301,9 @@ def test_rlm_parallel():
 
 @_test_decorator("RLM Reasoning Tree")
 def test_rlm_reasoning_tree():
-    from src.phi_enhanced_rlm import PhiEnhancedRLM, MockLLMBackend
     import tempfile
+
+    from src.phi_enhanced_rlm import MockLLMBackend, PhiEnhancedRLM
 
     mock_llm = MockLLMBackend(seed=42)
     chunks = ["The golden ratio φ", "E8 Lie group", "Recursive reasoning"]
@@ -340,9 +343,7 @@ def test_rlm_reasoning_tree():
 
 @_test_decorator("API Models")
 def test_api_models():
-    from api import (  # noqa: E402
-        AnalyzeRequest, ChatRequest, CompareRequest
-    )
+    from api import AnalyzeRequest, ChatRequest, CompareRequest  # noqa: E402
 
     # Test request models
     req = AnalyzeRequest(query="Test query", max_depth=3)
@@ -389,8 +390,9 @@ def test_api_state():
 
 @_test_decorator("End-to-End Integration")
 def test_integration():
-    from src.phi_enhanced_rlm import PhiEnhancedRLM, MockLLMBackend
     import tempfile
+
+    from src.phi_enhanced_rlm import MockLLMBackend, PhiEnhancedRLM
 
     # Setup
     mock_llm = MockLLMBackend(seed=42)

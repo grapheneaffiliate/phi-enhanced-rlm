@@ -16,11 +16,11 @@ Usage:
     response = backend("Your prompt here", max_tokens=256)
 """
 
-import os
 import json
+import os
 import time
-from typing import Optional, Dict, Any
 from dataclasses import dataclass
+from typing import Any, Dict, Optional
 
 try:
     from openai import OpenAI

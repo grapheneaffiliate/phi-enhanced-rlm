@@ -13,13 +13,10 @@ Key mechanisms:
 4. φ-Chain-of-thought: decomposition follows golden ratio priority levels
 """
 
-from typing import List, Optional
 from dataclasses import dataclass
+from typing import List, Optional
 
-from .phi_separation_novel_mathematics import (
-    PHI, PHI_INV, EPSILON, CASIMIR_DEGREES
-)
-
+from .phi_separation_novel_mathematics import CASIMIR_DEGREES, EPSILON, PHI, PHI_INV
 
 # E8 Casimir dimension labels for structured reasoning
 CASIMIR_LENSES = {

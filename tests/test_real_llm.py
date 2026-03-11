@@ -15,13 +15,13 @@ Skip with: pytest -m "not integration"
 import json
 import os
 import sys
-import pytest
 from pathlib import Path
+
+import pytest
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from src.phi_enhanced_rlm import PhiEnhancedRLM, MockLLMBackend, SubCallResult
-
+from src.phi_enhanced_rlm import MockLLMBackend, PhiEnhancedRLM, SubCallResult
 
 # Mark all tests in this module as integration tests
 pytestmark = pytest.mark.integration

@@ -9,8 +9,8 @@ tree being built.
 
 import json
 import time
-from dataclasses import dataclass, field, asdict
-from typing import Generator, Dict, Any
+from dataclasses import asdict, dataclass, field
+from typing import Any, Dict, Generator
 
 
 @dataclass

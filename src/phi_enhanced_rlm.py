@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-import sys as _sys
 import os as _os
+import sys as _sys
+
 # Fix Windows console encoding
 if _sys.platform == 'win32':
     _os.environ.setdefault('PYTHONIOENCODING', 'utf-8')
@@ -28,16 +29,17 @@ Implements complete recursive reasoning with:
 8. recursive_solve() Driver Engine
 """
 
-import numpy as np  # noqa: E402
-import hashlib  # noqa: E402
-import json  # noqa: E402
 import asyncio  # noqa: E402
 import concurrent.futures  # noqa: E402
-from typing import List, Dict, Any, Optional, Tuple, Callable  # noqa: E402
-from dataclasses import dataclass, field  # noqa: E402
-from pathlib import Path  # noqa: E402
+import hashlib  # noqa: E402
+import json  # noqa: E402
 import logging  # noqa: E402
 import time  # noqa: E402
+from dataclasses import dataclass, field  # noqa: E402
+from pathlib import Path  # noqa: E402
+from typing import Any, Callable, Dict, List, Optional, Tuple  # noqa: E402
+
+import numpy as np  # noqa: E402
 
 logger = logging.getLogger(__name__)
 
@@ -46,12 +48,16 @@ _executor = concurrent.futures.ThreadPoolExecutor(max_workers=4)
 
 # Import from the provided mathematics library
 from .phi_separation_novel_mathematics import (  # noqa: E402
-    PHI, PHI_INV, EPSILON, CASIMIR_DEGREES, COXETER_NUMBER
+    CASIMIR_DEGREES,
+    COXETER_NUMBER,
+    EPSILON,
+    PHI,
+    PHI_INV,
 )
 
 # Import real embeddings (with fallback to mock)
 try:
-    from .embeddings import get_embedder, CachedEmbedder, EmbeddingConfig  # noqa: F401
+    from .embeddings import CachedEmbedder, EmbeddingConfig, get_embedder  # noqa: F401
     REAL_EMBEDDINGS_AVAILABLE = True
 except ImportError:
     REAL_EMBEDDINGS_AVAILABLE = False

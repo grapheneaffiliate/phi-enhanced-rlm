@@ -14,6 +14,7 @@ The φ-kernel K(a,b) = φ^(-||a-b||/δ) is:
 """
 
 import numpy as np
+
 from .phi_separation_novel_mathematics import PHI
 
 
