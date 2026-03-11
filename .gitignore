@@ -85,6 +85,9 @@ venv.bak/
 ehthumbs.db
 Thumbs.db
 
+# Claude Code
+.claude/worktrees/
+
 # Project specific
 *.log
 *.jsonl
