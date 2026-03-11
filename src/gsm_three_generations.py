@@ -55,7 +55,6 @@ The three generations have masses related by the Lucas sequence:
 import math
 from typing import Dict, List, NamedTuple, Tuple
 
-import numpy as np
 
 # Fundamental constants
 PHI = (1 + math.sqrt(5)) / 2
@@ -120,7 +119,7 @@ def e6_to_so10_u1() -> BranchingRule:
     - 10: Higgs-like fields
     - 1: right-handed neutrino singlet
     """
-    child_reps_78 = [
+    _child_reps_78 = [  # noqa: F841 — kept for documentation of branching
         ("45", "0"),     # SO(10) adjoint
         ("16", "+3"),    # SO(10) spinor
         ("16̄", "-3"),   # Conjugate spinor
@@ -396,7 +395,7 @@ def generation_mass_hierarchy() -> Dict[str, object]:
     mtau = 1776.86  # MeV
 
     # Quark mass ratios (at 2 GeV, MSbar)
-    mu = 2.16  # MeV
+    _m_up = 2.16  # MeV  # noqa: F841 — kept for reference
     md = 4.67  # MeV
     ms = 93.4  # MeV
     mc = 1270  # MeV

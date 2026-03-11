@@ -26,8 +26,6 @@ from typing import Dict, List, Optional, Tuple
 
 import numpy as np
 from scipy import linalg as sla
-from scipy import sparse
-from scipy.sparse import linalg as sparse_la
 
 # =============================================================================
 # FUNDAMENTAL CONSTANTS
@@ -421,7 +419,6 @@ class GaugeSector:
         l_su3 = 0.0
         l_su2 = 0.0
         l_u1 = 0.0
-        l_other = 0.0
 
         for p in plaquettes:
             action_val = self.lattice.plaquette_action(p, gauge_field, 1.0)
@@ -2045,7 +2042,6 @@ class StandardModelLagrangian:
         """
         # Build a small lattice configuration
         lat = E8LatticeAction(n_vertices=E8_ROOTS)
-        roots = lat.roots
 
         # Gauge invariance: the plaquette action is invariant under
         # link variable transformations U → G(x) U G(y)†

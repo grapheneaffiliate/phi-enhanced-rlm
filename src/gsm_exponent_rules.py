@@ -49,9 +49,8 @@ This gives: χ_orb(E₈/H₄) = 1, completing the anchor derivation.
 """
 
 import math
-from typing import Dict, List, NamedTuple, Tuple
+from typing import Dict, List, NamedTuple
 
-import numpy as np
 
 # Fundamental constants
 PHI = (1 + math.sqrt(5)) / 2
@@ -691,7 +690,6 @@ def derive_product_rule() -> Dict[str, object]:
             pair = tuple(sorted([c1.degree, c2.degree]))
             if c1.degree != c2.degree and pair not in seen:  # no self-products, no duplicates
                 seen.add(pair)
-                product_exp = c1.exponent + c2.exponent
                 # Net charge determines shift rule
                 net_charge = c1.u1_charge + c2.u1_charge
                 if net_charge >= 2:
