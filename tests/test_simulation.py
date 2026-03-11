@@ -101,13 +101,17 @@ class TestRecursiveSolveCoherence:
             assert tokens > 0
 
     def test_deterministic_with_seed(self, mock_llm):
-        """Same seed produces same results."""
+        """Same seed produces same results (isolated instances)."""
         with tempfile.NamedTemporaryFile(suffix=".jsonl", delete=False) as f:
-            tf = f.name
+            tf1 = f.name
+        with tempfile.NamedTemporaryFile(suffix=".jsonl", delete=False) as f:
+            tf2 = f.name
         with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as f:
-            mf = f.name
-        rlm1 = PhiEnhancedRLM(MockLLMBackend(seed=99), ["c1", "c2"], trace_file=tf, memory_path=mf)
-        rlm2 = PhiEnhancedRLM(MockLLMBackend(seed=99), ["c1", "c2"], trace_file=tf, memory_path=mf)
+            mf1 = f.name
+        with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as f:
+            mf2 = f.name
+        rlm1 = PhiEnhancedRLM(MockLLMBackend(seed=99), ["c1", "c2"], trace_file=tf1, memory_path=mf1)
+        rlm2 = PhiEnhancedRLM(MockLLMBackend(seed=99), ["c1", "c2"], trace_file=tf2, memory_path=mf2)
         r1 = rlm1.recursive_solve("test", max_depth=2)
         r2 = rlm2.recursive_solve("test", max_depth=2)
         assert abs(r1.confidence - r2.confidence) < 0.01

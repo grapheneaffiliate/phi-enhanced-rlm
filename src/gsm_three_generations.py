@@ -55,7 +55,6 @@ The three generations have masses related by the Lucas sequence:
 import math
 from typing import Dict, List, NamedTuple, Tuple
 
-
 # Fundamental constants
 PHI = (1 + math.sqrt(5)) / 2
 EPSILON = 28 / 248

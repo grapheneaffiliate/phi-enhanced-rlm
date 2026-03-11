@@ -302,7 +302,7 @@ class TestGapModules:
         assert hierarchy_from_casimir()["deviation_percent"] < 1.0
 
     def test_gsm_constants_module(self):
-        from src.gsm_constants import get, get_all, INCONSISTENCY_RESOLUTIONS
+        from src.gsm_constants import INCONSISTENCY_RESOLUTIONS, get, get_all
         assert len(get_all()) >= 26  # 26 core + possible extras
         assert len(INCONSISTENCY_RESOLUTIONS) == 9
         assert get("ms_over_md").derivation_tier == "rigorous"
