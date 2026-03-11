@@ -13,9 +13,10 @@ This module handles:
 3. Diversity-aware pruning: don't just keep the top-scored, keep diverse ones
 """
 
-import numpy as np
-from typing import List, Optional
 from dataclasses import dataclass
+from typing import List, Optional
+
+import numpy as np
 
 from .phi_separation_novel_mathematics import PHI, PHI_INV
 

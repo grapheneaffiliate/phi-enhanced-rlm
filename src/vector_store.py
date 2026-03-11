@@ -26,14 +26,14 @@ Usage:
     rlm_result = rlm.recursive_solve(query, context_chunks=chunks)
 """
 
+import hashlib
+import json
+import logging
 import os
 import sys
-import hashlib
-import logging
-from pathlib import Path
-from typing import List, Dict, Any, Optional, Tuple
 from dataclasses import dataclass, field
-import json
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Tuple
 
 # Fix Windows console encoding
 if sys.platform == 'win32':

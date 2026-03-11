@@ -4,12 +4,13 @@
 import os
 import sys
 import tempfile
-import pytest
 from pathlib import Path
+
+import pytest
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from src.evolution import PhiEvolutionEngine, EvolutionState, EvaluationResult
+from src.evolution import EvaluationResult, EvolutionState, PhiEvolutionEngine
 from src.phi_separation_novel_mathematics import PHI_INV
 
 

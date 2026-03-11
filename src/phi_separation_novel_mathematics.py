@@ -21,8 +21,9 @@ This module implements the ten novel mathematical frameworks:
 
 """
 
+from typing import Callable, Dict, List, Optional, Tuple
+
 import numpy as np
-from typing import List, Tuple, Callable, Optional, Dict
 
 # =============================================================================
 # FUNDAMENTAL CONSTANTS

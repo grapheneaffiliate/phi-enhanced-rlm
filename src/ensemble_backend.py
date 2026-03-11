@@ -12,8 +12,7 @@ as the base_llm_callable parameter.
 """
 
 import logging
-from typing import Dict, Callable, Any
-
+from typing import Any, Callable, Dict
 
 logger = logging.getLogger(__name__)
 

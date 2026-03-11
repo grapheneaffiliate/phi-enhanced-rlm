@@ -16,14 +16,13 @@ Usage:
 import json
 import logging
 import time
-from typing import List, Dict
+from typing import Dict, List
 
-
-from .evolution import PhiEvolutionEngine, EvolutionState, EvaluationResult
-from .phi_enhanced_rlm import PhiEnhancedRLM, MockLLMBackend
+from .evolution import EvaluationResult, EvolutionState, PhiEvolutionEngine
+from .outcome_tracker import OutcomeTracker
+from .phi_enhanced_rlm import MockLLMBackend, PhiEnhancedRLM
 from .phi_separation_novel_mathematics import PHI
 from .session_memory import SessionMemory
-from .outcome_tracker import OutcomeTracker
 
 logger = logging.getLogger(__name__)
 

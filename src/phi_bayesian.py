@@ -13,8 +13,9 @@ same number of evaluations.
 """
 
 import logging
-import numpy as np
 from typing import Dict, List, Tuple
+
+import numpy as np
 
 from .phi_separation_novel_mathematics import PHI, PHI_INV
 

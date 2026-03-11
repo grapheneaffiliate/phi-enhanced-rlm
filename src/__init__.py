@@ -6,47 +6,53 @@ Self-evolving recursive language model with phi-geometric mathematics,
 multi-agent integration, tool execution, and adversarial self-evaluation.
 """
 
-from .phi_enhanced_rlm import PhiEnhancedRLM, ContextChunk, SubCallResult, LLMResponse
-from .phi_separation_novel_mathematics import (
-    PHI, PHI_INV, LOG_PHI,
-    PhiGramMatrix, SpectralFlow, PhiRenormalizationGroup
-)
-from .embeddings import get_embedder, CachedEmbedder, EmbeddingConfig
+# Agent integration (v4.0)
+from .agent_router import DEPTH_AGENT_MAP, AgentRouter
 from .cache import SQLiteEmbeddingCache, get_sqlite_cache
-from .extractors import (
-    extract_pdf_content, extract_docx_content, extract_web_content,
-    chunk_python_code, chunk_code_file
-)
-from .progress import RichProgressManager, get_progress_manager
-from .openrouter_backend import OpenRouterBackend
+from .code_review import PhiCodeReview, ReviewFinding, ReviewResult
+from .embeddings import CachedEmbedder, EmbeddingConfig, get_embedder
+from .ensemble_backend import EnsembleBackend
 
 # Evolution engine
-from .evolution import PhiEvolutionEngine, EvolutionState
-from .phi_attention import PhiAttentionInjector, PhiConfidenceScaler
-from .phi_sparse_reasoning import PhiSparseReasoner
-from .phi_memory import PhiSpiralMemory
-from .session_memory import SessionMemory
+from .evolution import EvolutionState, PhiEvolutionEngine
+from .extractors import (
+    chunk_code_file,
+    chunk_python_code,
+    extract_docx_content,
+    extract_pdf_content,
+    extract_web_content,
+)
 from .meta_recursion import MetaRecursiveRLM, RecursionStrategy
-from .phi_retrieval import phi_kernel_similarity, phi_retrieval_score
+from .openrouter_backend import OpenRouterBackend
+from .outcome_tracker import OutcomeTracker
+from .phi_attention import PhiAttentionInjector, PhiConfidenceScaler
 from .phi_bayesian import PhiBayesianOptimizer
-from .ensemble_backend import EnsembleBackend
-from .streaming import ReasoningEvent, recursive_solve_stream
-
-# Agent integration (v4.0)
-from .agent_router import AgentRouter, DEPTH_AGENT_MAP
+from .phi_critic import CritiqueResult, PhiCritic
+from .phi_enhanced_rlm import ContextChunk, LLMResponse, PhiEnhancedRLM, SubCallResult
+from .phi_memory import PhiSpiralMemory
+from .phi_planner import ExecutionPlan, PhiPlanner
+from .phi_retrieval import phi_kernel_similarity, phi_retrieval_score
+from .phi_separation_novel_mathematics import (
+    LOG_PHI,
+    PHI,
+    PHI_INV,
+    PhiGramMatrix,
+    PhiRenormalizationGroup,
+    SpectralFlow,
+)
+from .phi_sparse_reasoning import PhiSparseReasoner
+from .progress import RichProgressManager, get_progress_manager
+from .session_memory import SessionMemory
 from .skill_loader import SkillLoader
+from .streaming import ReasoningEvent, recursive_solve_stream
 
 # Autonomy modules (v4.1)
 from .tool_executor import ToolRegistry, ToolResult
-from .outcome_tracker import OutcomeTracker
-from .phi_critic import PhiCritic, CritiqueResult
-from .phi_planner import PhiPlanner, ExecutionPlan
-from .workflow_orchestrator import SuperpowersOrchestrator, WORKFLOW_PIPELINE
-from .code_review import PhiCodeReview, ReviewResult, ReviewFinding
+from .workflow_orchestrator import WORKFLOW_PIPELINE, SuperpowersOrchestrator
 
 # Vector store (optional - requires chromadb)
 try:
-    from .vector_store import VectorStore, RLMPipeline, Document, QueryResult  # noqa: F401
+    from .vector_store import Document, QueryResult, RLMPipeline, VectorStore  # noqa: F401
     VECTOR_STORE_AVAILABLE = True
 except ImportError:
     VECTOR_STORE_AVAILABLE = False

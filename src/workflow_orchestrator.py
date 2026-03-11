@@ -20,8 +20,8 @@ Red flags trigger debugging instead of rationalization.
 
 import logging
 from dataclasses import dataclass, field
-from typing import List, Dict, Any
 from pathlib import Path
+from typing import Any, Dict, List
 
 logger = logging.getLogger(__name__)
 

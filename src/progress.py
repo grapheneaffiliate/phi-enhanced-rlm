@@ -7,23 +7,28 @@ Rich progress bars and streaming support for RLM.
 
 import sys
 import time
-from typing import Optional, Iterator, Any, Callable
-from dataclasses import dataclass
 from contextlib import contextmanager
+from dataclasses import dataclass
+from typing import Any, Callable, Iterator, Optional
 
 # Try to import rich for beautiful output
 try:
     from rich.console import Console
-    from rich.progress import (
-        Progress, SpinnerColumn, TextColumn, BarColumn,
-        TaskProgressColumn, TimeRemainingColumn, TimeElapsedColumn
-    )
     from rich.live import Live  # noqa: F401
     from rich.panel import Panel  # noqa: F401
-    from rich.table import Table
-    from rich.tree import Tree
-    from rich.text import Text  # noqa: F401
+    from rich.progress import (
+        BarColumn,
+        Progress,
+        SpinnerColumn,
+        TaskProgressColumn,
+        TextColumn,
+        TimeElapsedColumn,
+        TimeRemainingColumn,
+    )
     from rich.syntax import Syntax  # noqa: F401
+    from rich.table import Table
+    from rich.text import Text  # noqa: F401
+    from rich.tree import Tree
     RICH_AVAILABLE = True
 except ImportError:
     RICH_AVAILABLE = False

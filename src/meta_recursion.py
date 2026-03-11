@@ -21,12 +21,12 @@ import json
 import logging
 import time
 from dataclasses import dataclass, field
-from typing import List, Dict, Optional, Any
+from typing import Any, Dict, List, Optional
 
 import numpy as np
 
-from .phi_separation_novel_mathematics import PHI, PHI_INV, CASIMIR_DEGREES
 from .phi_enhanced_rlm import PhiEnhancedRLM, SubCallResult
+from .phi_separation_novel_mathematics import CASIMIR_DEGREES, PHI, PHI_INV
 
 logger = logging.getLogger(__name__)
 
@@ -42,6 +42,7 @@ class RecursionStrategy:
     phi_attention: bool  # inject φ-structured reasoning
     sparse_pruning: bool  # apply φ-ratio branch pruning
     description: str = ""
+    min_depth: int = 0  # minimum depth before early-stop checks engage
 
 
 @dataclass
@@ -70,6 +71,7 @@ STRATEGIES: Dict[str, RecursionStrategy] = {
         sparse_pruning=True,
         description="Deep, narrow analysis with φ-structured reasoning. "
                      "Best for complex analytical questions requiring careful logic.",
+        min_depth=2,
     ),
     "wide_exploratory": RecursionStrategy(
         name="wide_exploratory",
@@ -81,6 +83,7 @@ STRATEGIES: Dict[str, RecursionStrategy] = {
         sparse_pruning=False,
         description="Wide, shallow exploration covering many angles. "
                      "Best for open-ended questions needing broad perspective.",
+        min_depth=1,
     ),
     "spiral_convergent": RecursionStrategy(
         name="spiral_convergent",
@@ -92,6 +95,7 @@ STRATEGIES: Dict[str, RecursionStrategy] = {
         sparse_pruning=True,
         description="Balanced spiral convergence using full φ-enhancement. "
                      "Best general-purpose strategy for moderate complexity.",
+        min_depth=2,
     ),
     "quick_factual": RecursionStrategy(
         name="quick_factual",
@@ -103,6 +107,7 @@ STRATEGIES: Dict[str, RecursionStrategy] = {
         sparse_pruning=False,
         description="Quick, focused factual lookup with minimal recursion. "
                      "Best for straightforward factual questions.",
+        min_depth=0,
     ),
     "deep_research": RecursionStrategy(
         name="deep_research",
@@ -116,6 +121,7 @@ STRATEGIES: Dict[str, RecursionStrategy] = {
                      "with agent-specialized depths: clarify -> brief -> plan -> "
                      "parallel research -> synthesize -> verify -> report. "
                      "Maps to claude-code-templates deep-research-team agents.",
+        min_depth=3,
     ),
     "planned": RecursionStrategy(
         name="planned",
@@ -128,6 +134,7 @@ STRATEGIES: Dict[str, RecursionStrategy] = {
         description="Pre-planned execution: decomposes query into a DAG of "
                      "steps before recursion. Steps execute in topological "
                      "order with independent branches parallelized.",
+        min_depth=1,
     ),
     "superpowers_workflow": RecursionStrategy(
         name="superpowers_workflow",
@@ -139,6 +146,7 @@ STRATEGIES: Dict[str, RecursionStrategy] = {
         sparse_pruning=False,
         description="Superpowers mandatory pipeline: brainstorm -> plan -> execute -> "
                      "spec-review -> quality-review -> verify -> debug. Serial with hard gates.",
+        min_depth=3,
     ),
 }
 
@@ -395,7 +403,8 @@ class MetaRecursiveRLM:
 
         # Step 4: Run recursive solve
         start = time.time()
-        result = self.rlm.recursive_solve(query, max_depth=strategy.max_depth)
+        result = self.rlm.recursive_solve(
+            query, max_depth=strategy.max_depth, min_depth=strategy.min_depth)
         elapsed = time.time() - start
 
         # Step 5: Meta-evaluate
@@ -423,7 +432,8 @@ class MetaRecursiveRLM:
 
                 self.configure_rlm(alt_strategy)
                 alt_start = time.time()
-                alt_result = self.rlm.recursive_solve(query, max_depth=alt_strategy.max_depth)
+                alt_result = self.rlm.recursive_solve(
+                    query, max_depth=alt_strategy.max_depth, min_depth=alt_strategy.min_depth)
                 alt_elapsed = time.time() - alt_start
 
                 alt_eval = self.evaluate_strategy(alt_result, alt_strategy, alt_elapsed)

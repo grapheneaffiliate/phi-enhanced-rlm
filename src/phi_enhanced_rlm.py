@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-import sys as _sys
 import os as _os
+import sys as _sys
+
 # Fix Windows console encoding
 if _sys.platform == 'win32':
     _os.environ.setdefault('PYTHONIOENCODING', 'utf-8')
@@ -28,16 +29,17 @@ Implements complete recursive reasoning with:
 8. recursive_solve() Driver Engine
 """
 
-import numpy as np  # noqa: E402
-import hashlib  # noqa: E402
-import json  # noqa: E402
 import asyncio  # noqa: E402
 import concurrent.futures  # noqa: E402
-from typing import List, Dict, Any, Optional, Tuple, Callable  # noqa: E402
-from dataclasses import dataclass, field  # noqa: E402
-from pathlib import Path  # noqa: E402
+import hashlib  # noqa: E402
+import json  # noqa: E402
 import logging  # noqa: E402
 import time  # noqa: E402
+from dataclasses import dataclass, field  # noqa: E402
+from pathlib import Path  # noqa: E402
+from typing import Any, Callable, Dict, List, Optional, Tuple  # noqa: E402
+
+import numpy as np  # noqa: E402
 
 logger = logging.getLogger(__name__)
 
@@ -46,12 +48,16 @@ _executor = concurrent.futures.ThreadPoolExecutor(max_workers=4)
 
 # Import from the provided mathematics library
 from .phi_separation_novel_mathematics import (  # noqa: E402
-    PHI, PHI_INV, EPSILON, CASIMIR_DEGREES, COXETER_NUMBER
+    CASIMIR_DEGREES,
+    COXETER_NUMBER,
+    EPSILON,
+    PHI,
+    PHI_INV,
 )
 
 # Import real embeddings (with fallback to mock)
 try:
-    from .embeddings import get_embedder, CachedEmbedder, EmbeddingConfig  # noqa: F401
+    from .embeddings import CachedEmbedder, EmbeddingConfig, get_embedder  # noqa: F401
     REAL_EMBEDDINGS_AVAILABLE = True
 except ImportError:
     REAL_EMBEDDINGS_AVAILABLE = False
@@ -831,7 +837,8 @@ class PhiEnhancedRLM:
 
     def _process_subquestions_parallel(self, subquestions: List[str],
                                         depth: int, path: Tuple[int, ...],
-                                        max_depth: int) -> List['SubCallResult']:
+                                        max_depth: int,
+                                        min_depth: int = 0) -> List['SubCallResult']:
         """
         Process subquestions in parallel using thread pool.
 
@@ -840,13 +847,14 @@ class PhiEnhancedRLM:
             depth: Current depth
             path: Current path
             max_depth: Maximum depth
+            min_depth: Minimum depth before early stopping
 
         Returns:
             List of SubCallResults
         """
         def process_one(args):
             i, subq = args
-            return self.recursive_solve(subq, depth + 1, path + (i,), max_depth)
+            return self.recursive_solve(subq, depth + 1, path + (i,), max_depth, min_depth)
 
         # Submit all tasks
         with concurrent.futures.ThreadPoolExecutor(max_workers=min(len(subquestions), 3)) as executor:
@@ -1063,7 +1071,8 @@ Respond in JSON format:
 
     def recursive_solve(self, query: str, depth: int = 0,
                         path: Tuple[int, ...] = (),
-                        max_depth: int = 5) -> SubCallResult:
+                        max_depth: int = 5,
+                        min_depth: int = 0) -> SubCallResult:
         """
         Main RLM recursion engine.
 
@@ -1072,6 +1081,7 @@ Respond in JSON format:
             depth: Current recursion depth
             path: Tuple tracking recursion path (for debugging)
             max_depth: Maximum recursion depth
+            min_depth: Minimum depth before early-stop checks engage
 
         Returns:
             SubCallResult with final answer, confidence, and metadata
@@ -1116,19 +1126,33 @@ Respond in JSON format:
                    (self.evolution_state is None or
                     getattr(self.evolution_state, 'phi_attention_enabled', True)))
 
+        # Below min_depth, subquestions are mandatory for recursion
+        require_subqs = depth < min_depth and depth < max_depth
+
         if use_phi:
-            prompt = phi_attn.build_phi_prompt(query, selected_text, depth, budget)
+            prompt = phi_attn.build_phi_prompt(
+                query, selected_text, depth, budget,
+                require_subquestions=require_subqs,
+            )
         else:
+            subq_instruction = (
+                "You MUST provide 2-3 subquestions that would deepen the analysis. "
+                "Break the problem into components."
+                if require_subqs else
+                "Provide subquestions if deeper analysis would improve the answer."
+            )
             prompt = f"""Query: {query}
 
 Context:
 {selected_text}
 
-Recursion depth: {depth}
+Recursion depth: {depth}/{max_depth}
 Remaining budget: {budget} tokens
 
+{subq_instruction}
+
 Respond in JSON format:
-{{"answer": "your answer", "confidence": 0.0-1.0, "subquestions": ["...", "..."]}}
+{{"answer": "your answer", "confidence": 0.0-1.0, "subquestions": ["sub-question 1", "sub-question 2"]}}
 """
 
         # Inject depth-appropriate agent persona (claude-code-templates)
@@ -1196,17 +1220,18 @@ Respond in JSON format:
 
         # Determine stop reason
         stop_reason = "none"
+        above_min_depth = depth >= min_depth
 
         # Check depth limit
         if depth >= max_depth:
             stop_reason = "depth"
 
-        # Step 5: Early-stop check (φ-momentum)
-        elif self.should_verify_early_stop():
+        # Step 5: Early-stop check (φ-momentum) — only after min_depth
+        elif above_min_depth and self.should_verify_early_stop():
             stop_reason = "momentum"
 
-        # Step 6: Saturation stop check (spectral flow)
-        elif not self.should_continue_recursion():
+        # Step 6: Saturation stop check (spectral flow) — only after min_depth
+        elif above_min_depth and not self.should_continue_recursion():
             stop_reason = "spectral"
 
         # Log this node - info_flow is the current new info units
@@ -1239,11 +1264,19 @@ Respond in JSON format:
 
         # Step 7: Recurse on subquestions
         if not subquestions:
-            return SubCallResult(
-                value=answer,
-                confidence=confidence,
-                metadata={"depth": depth, "path": path, "stop_reason": "no_subquestions"}
-            )
+            if depth < min_depth and depth < max_depth:
+                # Below min_depth: synthesize subquestions to force deeper recursion
+                subquestions = [
+                    f"Verify and elaborate: {query}",
+                    f"What are the key assumptions in: {query}",
+                ]
+                logger.info(f"Depth {depth} < min_depth {min_depth}: synthesized {len(subquestions)} subquestions")
+            else:
+                return SubCallResult(
+                    value=answer,
+                    confidence=confidence,
+                    metadata={"depth": depth, "path": path, "stop_reason": "no_subquestions"}
+                )
 
         # Apply φ-sparse pruning if available
         phi_sparse = self._get_phi_sparse()
@@ -1264,13 +1297,13 @@ Respond in JSON format:
         if getattr(self, 'parallel_enabled', False) and len(subquestions_limited) > 1:
             # Parallel processing
             sub_results = self._process_subquestions_parallel(
-                subquestions_limited, depth, path, max_depth
+                subquestions_limited, depth, path, max_depth, min_depth
             )
         else:
             # Sequential processing
             sub_results = []
             for i, subq in enumerate(subquestions_limited):
-                sub_result = self.recursive_solve(subq, depth + 1, path + (i,), max_depth)
+                sub_result = self.recursive_solve(subq, depth + 1, path + (i,), max_depth, min_depth)
                 sub_results.append(sub_result)
 
         # Aggregate sub-results with torsion correction

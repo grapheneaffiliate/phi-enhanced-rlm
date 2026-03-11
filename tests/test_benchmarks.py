@@ -8,9 +8,13 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 sys.path.insert(0, str(Path(__file__).parent.parent / "benchmarks"))
 
 from runner import (
-    VanillaRLM, load_dataset, check_answer, run_benchmark,
+    VanillaRLM,
+    check_answer,
     estimate_tokens,
+    load_dataset,
+    run_benchmark,
 )
+
 from src.phi_enhanced_rlm import MockLLMBackend, SubCallResult
 
 

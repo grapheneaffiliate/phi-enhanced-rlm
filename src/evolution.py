@@ -16,14 +16,13 @@ The evolution loop:
 import json
 import logging
 import time
-import numpy as np
-from dataclasses import dataclass, field, asdict
+from dataclasses import asdict, dataclass, field
 from pathlib import Path
-from typing import Dict, List, Optional, Any
+from typing import Any, Dict, List, Optional
 
-from .phi_separation_novel_mathematics import (
-    PHI_INV
-)
+import numpy as np
+
+from .phi_separation_novel_mathematics import PHI_INV
 
 logger = logging.getLogger(__name__)
 

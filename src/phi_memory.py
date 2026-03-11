@@ -18,16 +18,17 @@ Key principles:
 3. Consolidate: Merge similar, prune old, promote frequent
 """
 
-import json
-import time
 import hashlib
+import json
 import logging
-import numpy as np
-from dataclasses import dataclass, field, asdict
+import time
+from dataclasses import asdict, dataclass, field
 from pathlib import Path
-from typing import List, Dict, Optional, Any
+from typing import Any, Dict, List, Optional
 
-from .phi_separation_novel_mathematics import PHI, PHI_INV, LOG_PHI
+import numpy as np
+
+from .phi_separation_novel_mathematics import LOG_PHI, PHI, PHI_INV
 
 logger = logging.getLogger(__name__)
 

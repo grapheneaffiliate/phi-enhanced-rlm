@@ -6,15 +6,16 @@ High-performance SQLite-backed cache for embeddings.
 Survives restarts and enables rapid repeated analysis.
 """
 
-import sqlite3
 import hashlib
-import numpy as np
-from pathlib import Path
-from typing import Optional, List, Tuple
-from dataclasses import dataclass
 import logging
+import sqlite3
 import threading
 import time
+from dataclasses import dataclass
+from pathlib import Path
+from typing import List, Optional, Tuple
+
+import numpy as np
 
 logger = logging.getLogger(__name__)
 
