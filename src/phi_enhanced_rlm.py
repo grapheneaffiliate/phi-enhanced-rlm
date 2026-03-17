@@ -348,6 +348,9 @@ class PhiEnhancedRLM:
         # Tool executor for agentic capability (v4.1)
         self._tool_registry = None
 
+        # PRA controller (v5.2) — optional, enabled per-strategy
+        self._pra_controller = None
+
         # Semantic info flow tracking (v4.1)
         self._prev_embeddings = []
 
@@ -433,6 +436,32 @@ class PhiEnhancedRLM:
     def set_tool_registry(self, registry):
         """Set a custom tool registry (e.g., with code execution enabled)."""
         self._tool_registry = registry
+
+    def _get_pra_controller(self):
+        """Lazy-load PRA controller for self-referential recursive control."""
+        if self._pra_controller is None:
+            try:
+                from .pra_controller import PRAController
+                # Initialize with evolution state params if available
+                kwargs = {}
+                if self.evolution_state:
+                    if hasattr(self.evolution_state, 'pra_kappa'):
+                        kwargs['kappa'] = self.evolution_state.pra_kappa
+                    if hasattr(self.evolution_state, 'pra_epsilon_h'):
+                        kwargs['epsilon_h'] = self.evolution_state.pra_epsilon_h
+                    if hasattr(self.evolution_state, 'pra_epsilon_rho'):
+                        kwargs['epsilon_rho'] = self.evolution_state.pra_epsilon_rho
+                    if hasattr(self.evolution_state, 'pra_h0'):
+                        kwargs['h_0'] = self.evolution_state.pra_h0
+                self._pra_controller = PRAController(**kwargs)
+            except ImportError:
+                self._pra_controller = False
+        return self._pra_controller if self._pra_controller is not False else None
+
+    def enable_pra(self, **kwargs):
+        """Enable PRA controller with optional parameter overrides."""
+        from .pra_controller import PRAController
+        self._pra_controller = PRAController(**kwargs)
 
     def compute_semantic_info_units(self, answer_embedding: np.ndarray) -> float:
         """Measure info gain as cosine distance from previous answer embeddings.
@@ -1120,6 +1149,26 @@ Respond in JSON format:
         sub_gram = self.phi_gram.submatrix(selected_ids)
         logdet_selected = sub_gram.log_determinant
 
+        # PRA controller: compute defect and modulate budget (Algorithm 5.1)
+        pra = self._get_pra_controller()
+        pra_state = None
+        if pra:
+            # Reset controller at root depth
+            if depth == 0:
+                pra.reset()
+
+            # Compute context-geometry defect (Section 4.2)
+            logdet_full = self.phi_gram.log_determinant
+            rho = pra.compute_context_defect(logdet_selected, logdet_full)
+
+            # Execute PRA control step
+            pra_state = pra.step(rho)
+
+            # Modulate budget with equilibrium scheduler (Section 4.4)
+            depth_weights = pra.compute_depth_weights()
+            clamped_depth = min(depth, len(depth_weights) - 1)
+            budget = pra.equilibrium_schedule(budget, depth_weights[clamped_depth])
+
         # Step 2: Build prompt (with φ-attention injection if available)
         phi_attn = self._get_phi_attention()
         use_phi = (phi_attn is not None and
@@ -1226,6 +1275,10 @@ Respond in JSON format:
         if depth >= max_depth:
             stop_reason = "depth"
 
+        # PRA halting check (Theorem 3.3) — supplements existing checks
+        elif above_min_depth and pra_state is not None and pra_state.halted:
+            stop_reason = "pra_halt"
+
         # Step 5: Early-stop check (φ-momentum) — only after min_depth
         elif above_min_depth and self.should_verify_early_stop():
             stop_reason = "momentum"
@@ -1250,16 +1303,19 @@ Respond in JSON format:
                     )
                 except Exception:
                     pass
-            return SubCallResult(
-                value=answer,
-                confidence=confidence,
-                metadata={
+            metadata = {
                     "depth": depth,
                     "path": path,
                     "stop_reason": stop_reason,
                     "selected_ids": selected_ids,
-                    "verifier_results": [r.confidence for r in verifier_results]
+                    "verifier_results": [r.confidence for r in verifier_results],
                 }
+            if pra_state is not None:
+                metadata["pra"] = pra.to_dict()
+            return SubCallResult(
+                value=answer,
+                confidence=confidence,
+                metadata=metadata,
             )
 
         # Step 7: Recurse on subquestions
@@ -1325,16 +1381,20 @@ Respond in JSON format:
             except Exception:
                 pass  # Memory storage is best-effort
 
-        return SubCallResult(
-            value=final_answer,
-            confidence=final_conf,
-            metadata={
+        final_metadata = {
                 "depth": depth,
                 "path": path,
                 "stop_reason": "recursion_complete",
                 "n_subquestions": len(subquestions),
-                "aggregated_confidence": aggregated.confidence
+                "aggregated_confidence": aggregated.confidence,
             }
+        if pra_state is not None:
+            final_metadata["pra"] = pra.to_dict()
+
+        return SubCallResult(
+            value=final_answer,
+            confidence=final_conf,
+            metadata=final_metadata,
         )
 
     def adversarial_challenge(self, query: str, result: 'SubCallResult') -> 'SubCallResult':

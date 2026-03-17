@@ -148,6 +148,19 @@ STRATEGIES: Dict[str, RecursionStrategy] = {
                      "spec-review -> quality-review -> verify -> debug. Serial with hard gates.",
         min_depth=3,
     ),
+    "pra": RecursionStrategy(
+        name="pra",
+        max_depth=7,
+        budget_distribution="casimir",
+        chunk_strategy="diversity",
+        branch_factor=3,
+        phi_attention=True,
+        sparse_pruning=True,
+        description="Phi-Recursive Architecture: self-referential control law governs "
+                     "depth, budget, and halting via the golden-ratio fixed point. "
+                     "Defect-sensitive controller with provable convergence and finite halting.",
+        min_depth=1,
+    ),
 }
 
 
@@ -322,6 +335,13 @@ class MetaRecursiveRLM:
         for i, w in enumerate(weights):
             budget_map[i] = int(self.rlm.total_budget * w / total)
         self.rlm.budget_map = budget_map
+
+        # Enable PRA controller for the "pra" strategy
+        if strategy.name == "pra":
+            self.rlm.enable_pra()
+        else:
+            # Disable PRA for other strategies
+            self.rlm._pra_controller = None
 
     def evaluate_strategy(self, result: SubCallResult,
                            strategy: RecursionStrategy,

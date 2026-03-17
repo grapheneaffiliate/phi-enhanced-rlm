@@ -70,6 +70,11 @@ class EvolutionState:
     agent_performance: Dict[str, float] = field(default_factory=dict)
     # Depth-to-agent mapping overrides (depth_str -> agent_name)
     depth_agent_overrides: Dict[str, str] = field(default_factory=dict)
+    # PRA controller parameters (v5.2)
+    pra_kappa: float = 1.0  # Coupling constant for defect sensitivity
+    pra_epsilon_h: float = 0.01  # Halting threshold for equilibrium error
+    pra_epsilon_rho: float = 0.05  # Halting threshold for residual defect
+    pra_h0: float = 1.0  # Initial control state
 
     def to_dict(self) -> Dict[str, Any]:
         return asdict(self)
@@ -254,6 +259,9 @@ class PhiEvolutionEngine:
         # 6. Evolve agent assignments (if agent performance data available)
         self._mutate_agent_assignments(evaluation.depth_accuracy, lr)
 
+        # 7. Evolve PRA controller parameters
+        self._mutate_pra_params(evaluation, lr)
+
         # Update history and generation
         self.state.accuracy_history.append(evaluation.accuracy)
         self.state.token_history.append(evaluation.avg_tokens)
@@ -386,6 +394,29 @@ class PhiEvolutionEngine:
                     self.state.agent_performance[agent_name] = acc
             except (ValueError, IndexError):
                 pass
+
+    def _mutate_pra_params(self, evaluation: 'EvaluationResult', lr: float):
+        """Adapt PRA controller parameters based on evaluation.
+
+        - Premature halting → tighten thresholds (decrease ε_h, ε_ρ)
+        - Late halting → relax thresholds (increase ε_h, ε_ρ)
+        - Low accuracy → increase coupling κ (more defect-sensitive)
+        """
+        if evaluation.premature_stops > evaluation.late_stops:
+            # Halting too early — make thresholds stricter
+            self.state.pra_epsilon_h = max(0.001, self.state.pra_epsilon_h * (1 - lr * 0.1))
+            self.state.pra_epsilon_rho = max(0.01, self.state.pra_epsilon_rho * (1 - lr * 0.1))
+        elif evaluation.late_stops > evaluation.premature_stops:
+            # Halting too late — relax thresholds
+            self.state.pra_epsilon_h = min(0.1, self.state.pra_epsilon_h * (1 + lr * 0.1))
+            self.state.pra_epsilon_rho = min(0.2, self.state.pra_epsilon_rho * (1 + lr * 0.1))
+
+        if evaluation.accuracy < 0.4:
+            # Low accuracy — increase defect coupling
+            self.state.pra_kappa = min(5.0, self.state.pra_kappa * (1 + lr * 0.05))
+        elif evaluation.accuracy > 0.8:
+            # High accuracy — relax coupling
+            self.state.pra_kappa = max(0.1, self.state.pra_kappa * (1 - lr * 0.02))
 
     def get_best_chunk_strategy(self) -> str:
         """Return the highest-scoring chunk selection strategy."""

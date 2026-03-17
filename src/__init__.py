@@ -8,6 +8,9 @@ multi-agent integration, tool execution, and adversarial self-evaluation.
 
 # Agent integration (v4.0)
 from .agent_router import DEPTH_AGENT_MAP, AgentRouter
+
+# PRA controller (v5.2)
+from .pra_controller import PRAControlState, PRAController
 from .cache import SQLiteEmbeddingCache, get_sqlite_cache
 from .code_review import PhiCodeReview, ReviewFinding, ReviewResult
 from .embeddings import CachedEmbedder, EmbeddingConfig, get_embedder
@@ -131,4 +134,7 @@ __all__ = [
     "PhiCodeReview",
     "ReviewResult",
     "ReviewFinding",
+    # PRA Controller (v5.2)
+    "PRAController",
+    "PRAControlState",
 ]

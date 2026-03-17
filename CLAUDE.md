@@ -24,12 +24,13 @@ and attention patterns.
 - `src/phi_critic.py` -- Adversarial self-evaluation (v4.1)
 - `src/phi_planner.py` -- DAG-based task decomposition (v4.1)
 - `src/mcp_server.py` -- MCP server for Claude Code integration (v4.1)
+- `src/pra_controller.py` -- Phi-Recursive Architecture controller (v5.2)
 
 ## Architecture
 
 ### Recursion Engine
 
-`recursive_solve()` is the main engine with 7 components:
+`recursive_solve()` is the main engine with 8 components:
 1. phi-Gram chunk selection (greedy delta-logdet diversity)
 2. Casimir flow budget allocation (E8 Casimir degrees)
 3. phi-momentum early stopping
@@ -37,6 +38,7 @@ and attention patterns.
 5. Golden ratio QEC verification (3 independent verifiers)
 6. Torsion-corrected aggregation (E8 epsilon = 28/248)
 7. Dependency cohomology tracking
+8. PRA self-referential control (defect-sensitive halting, equilibrium budget)
 
 ### Agent Integration (v4.0)
 
@@ -62,6 +64,7 @@ Each depth uses a different specialist agent persona:
 - `quick_factual` -- Minimal recursion lookup (max_depth=2)
 - `deep_research` -- Full E8 hierarchy with agent specialization (max_depth=7)
 - `planned` -- Pre-planned DAG execution with dependency-ordered steps (max_depth=4)
+- `pra` -- Phi-Recursive Architecture with self-referential control law (max_depth=7)
 
 ## Conventions
 
@@ -69,7 +72,7 @@ Each depth uses a different specialist agent persona:
 - phi = 1.618033988749895, epsilon = 28/248 (torsion correction)
 - Tests: `python -m pytest tests/ -v`
 - Evolution: `python -m src.evolution_loop --generations 10`
-- Version: 4.1.0
+- Version: 5.2.0
 
 ## Development
 
